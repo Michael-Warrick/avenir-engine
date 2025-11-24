@@ -23,7 +23,7 @@ public:
     explicit VulkanRenderer(GLFWwindow *window);
     ~VulkanRenderer() override;
 
-    void drawFrame() override;
+    void drawFrame(glm::mat4 cameraViewMatrix) override;
     void onFramebufferResize(int width, int height) override;
 
 private:
@@ -66,7 +66,8 @@ private:
     void createBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties, vk::raii::Buffer &buffer, vk::raii::DeviceMemory &bufferMemory);
     void copyBuffer(const vk::raii::Buffer &sourceBuffer,
                     const vk::raii::Buffer &destinationBuffer, vk::DeviceSize size);
-    void updateUniformBuffer(uint32_t currentImage) const;
+    void updateUniformBuffer(uint32_t currentImage,
+                             const glm::mat4 &viewMatrix) const;
 
     // std::filesystem::path getResourcePath(const std::string& relativePath);
     static std::vector<char> readFile(const std::string &fileName);

@@ -1,2 +1,3 @@
 add_subdirectory(hello_window)
 add_subdirectory(simple_renderer)
+add_subdirectory(simple_fps)

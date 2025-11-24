@@ -10,6 +10,10 @@ add_subdirectory(vendor/glm)
 
 add_library(${PROJECT_NAME}
         src/platform/Window.cpp
+        src/input/InputManager.cpp
+
+        src/scene/Scene.cpp
+        src/scene/components/Camera.cpp
 
         src/graphics/Renderer.cpp
         src/graphics/vulkan/VulkanRenderer.cpp

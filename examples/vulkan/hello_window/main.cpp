@@ -4,10 +4,10 @@
 #include <avenir/graphics/Renderer.hpp>
 
 int main(int argc, const char *argv[]) {
-    const avenir::Window window(480, 320, "Hello Window!");
+    const avenir::platform::Window window(480, 320, "Hello Window!");
 
     while (window.isOpen()) {
-        avenir::Window::pollEvents();
+        avenir::platform::Window::pollEvents();
     }
 
     return 0;

@@ -1,8 +1,8 @@
-add_executable(simple_renderer main.cpp)
+add_executable(simple_fps main.cpp)
 
-target_link_libraries(simple_renderer PRIVATE avenir)
+target_link_libraries(simple_fps PRIVATE avenir)
 
-function(add_slang_shader_target_simple_renderer TARGET)
+function(add_slang_shader_target_simple_fps TARGET)
     cmake_parse_arguments("SHADER" "" "" "SOURCES" ${ARGN})
 
     # Quick check to ensure we actually have shaders to compile
@@ -46,5 +46,5 @@ function(add_slang_shader_target_simple_renderer TARGET)
     add_custom_target(${TARGET} DEPENDS ${OUTPUTS})
 endfunction()
 
-add_slang_shader_target_simple_renderer(simple_renderer_shader SOURCES resources/shaders/shader.slang)
-add_dependencies(simple_renderer simple_renderer_shader)
+add_slang_shader_target_simple_fps(simple_fps_shader SOURCES resources/shaders/shader.slang)
+add_dependencies(simple_fps simple_fps_shader)

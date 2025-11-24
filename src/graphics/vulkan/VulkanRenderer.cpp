@@ -44,7 +44,7 @@ VulkanRenderer::~VulkanRenderer() {
     std::cout << "[Vulkan] Shutting down...\n";
 }
 
-void VulkanRenderer::drawFrame() {
+void VulkanRenderer::drawFrame(const glm::mat4 cameraViewMatrix) {
     while (vk::Result::eTimeout ==
            m_logicalDevice.waitForFences(*m_inFlightFences[m_currentFrame],
                                          vk::True, UINT64_MAX)) {
@@ -65,7 +65,7 @@ void VulkanRenderer::drawFrame() {
             "[Vulkan] Error: Failed to acquire swapchain image!\n");
     }
 
-    updateUniformBuffer(m_currentFrame);
+    updateUniformBuffer(m_currentFrame, cameraViewMatrix);
 
     m_logicalDevice.resetFences(*m_inFlightFences[m_currentFrame]);
 
@@ -433,20 +433,11 @@ void VulkanRenderer::copyBuffer(const vk::raii::Buffer &sourceBuffer,
     m_queue.waitIdle();
 }
 
-void VulkanRenderer::updateUniformBuffer(const uint32_t currentImage) const {
-    static auto startTime = std::chrono::high_resolution_clock::now();
-    const auto currentTime = std::chrono::high_resolution_clock::now();
-    const float time =
-        std::chrono::duration<float, std::chrono::seconds::period>(currentTime -
-                                                                   startTime)
-            .count();
-
+void VulkanRenderer::updateUniformBuffer(const uint32_t currentImage, const glm::mat4 &viewMatrix) const {
     UniformBufferObject ubo{};
-    ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f),
-                            glm::vec3(0.0f, 0.0f, 1.0f));
-    ubo.view =
-        glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f),
-                    glm::vec3(0.0f, 0.0f, 1.0f));
+    ubo.model = glm::mat4(1.0f);
+    ubo.view = viewMatrix;
+
     ubo.projection =
         glm::perspective(glm::radians(45.0f),
                          static_cast<float>(m_swapchainExtent.width) /

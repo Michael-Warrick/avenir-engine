@@ -1,0 +1,4 @@
+#ifndef AVENIR_SCENE_HPP
+#define AVENIR_SCENE_HPP
+
+#endif  // AVENIR_SCENE_HPP
