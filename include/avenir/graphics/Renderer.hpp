@@ -11,12 +11,13 @@ namespace platform { class Window; }
 } // namespace avenir
 
 namespace avenir::graphics {
+
+enum class Api { eVulkan = 0 };
+
 class Renderer {
 public:
-    enum class GraphicsAPI { eVulkan = 0 };
-
     static std::unique_ptr<Renderer> create(platform::Window& window,
-                                            GraphicsAPI api);
+                                            Api api);
     virtual ~Renderer() = default;
 
     virtual void drawFrame(glm::mat4 cameraViewMatrix) = 0;

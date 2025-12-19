@@ -6,9 +6,9 @@
 namespace avenir::graphics {
 
 std::unique_ptr<Renderer> Renderer::create(platform::Window &window,
-                                           const GraphicsAPI api) {
+                                           const Api api) {
     switch (api) {
-        case GraphicsAPI::eVulkan: {
+        case Api::eVulkan: {
             auto renderer = std::make_unique<vulkan::VulkanRenderer>(window.handle());
             // Attach renderer instance to GLFW window
             window.context().renderer = renderer.get();

@@ -1,5 +1,5 @@
-#ifndef WINDOW_HPP
-#define WINDOW_HPP
+#ifndef AVENIR_PLATFORM_WINDOW_HPP
+#define AVENIR_PLATFORM_WINDOW_HPP
 
 #include <GLFW/glfw3.h>
 
@@ -10,9 +10,13 @@
 
 namespace avenir {
 // Forward declarations
-namespace graphics { class Renderer; }
-namespace input { class InputManager; }
-} // namespace avenir
+namespace graphics {
+class Renderer;
+}
+namespace input {
+class InputManager;
+}
+}  // namespace avenir
 
 namespace avenir::platform {
 class Window {
@@ -29,8 +33,8 @@ public:
 
     [[nodiscard]] bool isOpen() const;
     static void pollEvents();
-    [[nodiscard]] uint32_t getWidth() const;
-    [[nodiscard]] uint32_t getHeight() const;
+    [[nodiscard]] uint32_t width() const;
+    [[nodiscard]] uint32_t height() const;
 
     [[nodiscard]] GLFWwindow *handle() const;
     Context &context();
@@ -41,4 +45,4 @@ private:
 };
 }  // namespace avenir::platform
 
-#endif // WINDOW_HPP
+#endif  // AVENIR_PLATFORM_WINDOW_HPP

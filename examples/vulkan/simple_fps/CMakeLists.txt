@@ -1,4 +1,4 @@
-add_executable(simple_fps main.cpp)
+add_executable(simple_fps main.cpp FPSController.cpp)
 
 target_link_libraries(simple_fps PRIVATE avenir)
 

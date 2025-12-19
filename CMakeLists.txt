@@ -10,6 +10,7 @@ add_subdirectory(vendor/glm)
 
 add_library(${PROJECT_NAME}
         src/platform/Window.cpp
+        src/platform/Time.cpp
         src/input/InputManager.cpp
 
         src/scene/Scene.cpp

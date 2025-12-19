@@ -2,7 +2,8 @@
 
 namespace avenir::platform {
 
-Window::Window(const uint32_t width, const uint32_t height, const std::string &title) {
+Window::Window(const uint32_t width, const uint32_t height,
+               const std::string &title) {
     glfwInit();
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -24,14 +25,14 @@ bool Window::isOpen() const { return !glfwWindowShouldClose(m_glfwWindow); }
 
 void Window::pollEvents() { glfwPollEvents(); }
 
-uint32_t Window::getWidth() const {
+uint32_t Window::width() const {
     int w, h;
     glfwGetWindowSize(m_glfwWindow, &w, &h);
 
     return static_cast<uint32_t>(w);
 }
 
-uint32_t Window::getHeight() const {
+uint32_t Window::height() const {
     int w, h;
     glfwGetWindowSize(m_glfwWindow, &w, &h);
 
@@ -42,4 +43,4 @@ GLFWwindow *Window::handle() const { return m_glfwWindow; }
 
 Window::Context &Window::context() { return m_context; }
 
-} // avenir::platform
+}  // namespace avenir::platform

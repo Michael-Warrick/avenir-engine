@@ -1,28 +1,31 @@
 #include <avenir/graphics/Renderer.hpp>
+#include <avenir/input/InputManager.hpp>
+#include <avenir/platform/Time.hpp>
 #include <avenir/platform/Window.hpp>
 #include <avenir/scene/components/Camera.hpp>
-#include <avenir/input/InputManager.hpp>
+
+#include "FPSController.hpp"
 
 int main(int argc, char *argv[]) {
-    using namespace avenir::graphics;
+    auto window = avenir::platform::Window(640, 480, "Simple FPS");
 
-    avenir::platform::Window window(640, 480, "Simple FPS");
-    const auto renderer =
-        Renderer::create(window, Renderer::GraphicsAPI::eVulkan);
+    const auto renderer = avenir::graphics::Renderer::create(
+        window, avenir::graphics::Api::eVulkan);
+
     avenir::scene::components::Camera mainCamera(
         glm::vec3(0.0f, 0.0f, 2.0f), glm::vec3(0.0f, 1.0f, 0.0f), -90.0f, 0.0f);
 
-    auto inputManager = avenir::input::InputManager(window, mainCamera);
-    auto lastTime = std::chrono::high_resolution_clock::now();
+    avenir::input::InputManager inputManager(window);
 
+    const FPSController fpsController(inputManager, mainCamera);
+
+    avenir::platform::Time time;
     while (window.isOpen()) {
-        auto now = std::chrono::high_resolution_clock::now();
-        const float deltaTime = std::chrono::duration<float>(now - lastTime).count();
-        lastTime = now;
-
+        time.tick();
         avenir::platform::Window::pollEvents();
 
-        inputManager.update(deltaTime);
+        fpsController.update(time.deltaTime());
+
         renderer->drawFrame(mainCamera.viewMatrix());
     }
 
