@@ -30,10 +30,6 @@ struct Transform final : public Component {
     [[nodiscard]] glm::vec3 right() const;
     [[nodiscard]] glm::mat4 worldMatrix() const;
     [[nodiscard]] glm::mat4 inverseWorldMatrix() const;
-
-    glm::vec3 worldUp = glm::vec3(0.0f, 1.0f, 0.0f);
-    float yaw = -90.0f;
-    float pitch = 0.0f;
 };
 
 }  // namespace avenir::scene::components

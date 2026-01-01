@@ -15,6 +15,9 @@ public:
     Entity &createEntity();
     std::optional<Entity *> findEntityById(uint32_t id);
 
+    void setEntityParent(uint32_t child, std::optional<uint32_t> parent);
+    void detatchEntityFromParent(uint32_t child);
+
     void printEntityIds();
 
 private:

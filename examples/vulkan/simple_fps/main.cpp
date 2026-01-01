@@ -19,10 +19,8 @@ int main(int argc, char *argv[]) {
     avenir::Entity &player = scene.createEntity();
     player.addComponent<avenir::Transform>();
 
-    avenir::Entity &enemy = scene.createEntity();
-    enemy.addComponent<avenir::Transform>();
-
-    scene.printEntityIds();
+    scene.setEntityParent(camera.id(), player.id());
+    scene.detatchEntityFromParent(camera.id());
 
     FPSController fpsController(inputManager, camera);
 

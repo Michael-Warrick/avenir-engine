@@ -53,11 +53,19 @@ public:
     void listComponents() const;
 
     [[nodiscard]] uint32_t id() const;
+    [[nodiscard]] std::optional<uint32_t> parent() const;
+    [[nodiscard]] const std::vector<uint32_t> &children() const;
     [[nodiscard]] const std::vector<std::unique_ptr<Component>> &components()
         const;
 
+    void setParent(std::optional<uint32_t> id);
+    void addChild(uint32_t id);
+    void removeChild(uint32_t id);
+
 private:
     uint32_t m_id;
+    std::optional<uint32_t> m_parent;
+    std::vector<uint32_t> m_children;
     std::vector<std::unique_ptr<Component>> m_components;
 };
 
