@@ -19,7 +19,6 @@ struct Transform final : public Component {
     Transform() = default;
     explicit Transform(glm::vec3 position);
     Transform(glm::vec3 position, glm::quat rotation, glm::vec3 scale);
-    [[nodiscard]] std::string name() const override;
 
     glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f);
     glm::quat rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
@@ -30,6 +29,9 @@ struct Transform final : public Component {
     [[nodiscard]] glm::vec3 right() const;
     [[nodiscard]] glm::mat4 worldMatrix() const;
     [[nodiscard]] glm::mat4 inverseWorldMatrix() const;
+
+    [[nodiscard]] std::string name() const override;
+    static constexpr std::string_view staticName = "Transform";
 };
 
 }  // namespace avenir::scene::components

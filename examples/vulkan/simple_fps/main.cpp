@@ -12,15 +12,13 @@ int main(int argc, char *argv[]) {
 
     avenir::Scene scene;
 
+    const avenir::Entity &player = scene.createEntity();
     avenir::Entity &camera = scene.createEntity();
-    camera.addComponent<avenir::Transform>(glm::vec3(0.0f, 0.0f, 2.0f));
+    camera.component<avenir::Transform>().position =
+        glm::vec3(0.0f, 0.0f, 2.0f);
     camera.addComponent<avenir::Camera>();
 
-    avenir::Entity &player = scene.createEntity();
-    player.addComponent<avenir::Transform>();
-
     scene.setEntityParent(camera.id(), player.id());
-    scene.detatchEntityFromParent(camera.id());
 
     FPSController fpsController(inputManager, camera);
 

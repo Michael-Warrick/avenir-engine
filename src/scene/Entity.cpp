@@ -1,10 +1,17 @@
 #include "avenir/scene/Entity.hpp"
 
+#include "avenir/scene/components/Camera.hpp"
+#include "avenir/scene/components/Transform.hpp"
+
 #include <iostream>
 
 namespace avenir::scene {
 
-Entity::Entity(const uint32_t id) { m_id = id; }
+Entity::Entity(const uint32_t id) {
+    m_id = id;
+    m_components.emplace_back(
+        std::make_unique<avenir::scene::components::Transform>());
+}
 
 void Entity::listComponents() const {
     for (const auto &component : m_components) {

@@ -9,6 +9,7 @@ namespace avenir::scene::components {
 
 struct MeshRenderer final : public Component {
     [[nodiscard]] std::string name() const override;
+    static constexpr std::string_view staticName = "MeshRenderer";
 };
 
 }  // namespace avenir::scene::components

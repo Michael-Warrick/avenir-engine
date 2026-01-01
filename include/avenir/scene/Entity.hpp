@@ -3,6 +3,8 @@
 
 #include <memory>
 #include <vector>
+#include <sstream>
+#include <iostream>
 
 #include "avenir/scene/Component.hpp"
 
@@ -12,9 +14,27 @@ class Entity {
 public:
     explicit Entity(uint32_t id);
 
+    template <typename T>
+    [[nodiscard]] bool has() const {
+        static_assert(std::is_base_of_v<Component, T>);
+
+        return std::ranges::any_of(
+            m_components, [](const std::unique_ptr<Component> &component) {
+                return dynamic_cast<const T *>(component.get()) != nullptr;
+            });
+    }
+
     template <typename T, typename... Args>
     T &addComponent(Args &&...args) {
         static_assert(std::is_base_of_v<Component, T>);
+        if (has<T>()) {
+            std::ostringstream errorMessage;
+            errorMessage << "Error: Entity already has component of type: "
+                         << T::staticName;
+
+            throw std::runtime_error(errorMessage.str());
+        }
+
         auto pointer = std::make_unique<T>(std::forward<Args>(args)...);
         T &reference = *pointer;
         m_components.emplace_back(std::move(pointer));

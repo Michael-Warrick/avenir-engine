@@ -12,6 +12,8 @@ struct Camera final : public Component {
     float nearPlane = 0.1f;
     float farPlane = 100.0f;
     bool isPrimary = true;
+
+    static constexpr std::string_view staticName = "Camera";
 };
 
 }  // namespace avenir::scene::components

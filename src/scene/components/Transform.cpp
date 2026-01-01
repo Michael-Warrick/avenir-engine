@@ -18,8 +18,6 @@ Transform::Transform(const glm::vec3 position, const glm::quat rotation,
     this->scale = scale;
 }
 
-std::string Transform::name() const { return "Transform"; }
-
 glm::vec3 Transform::forward() const {
     return glm::normalize(rotation * glm::vec3(0.0f, 0.0f, -1.0f));
 }
@@ -43,5 +41,7 @@ glm::mat4 Transform::worldMatrix() const {
 glm::mat4 Transform::inverseWorldMatrix() const {
     return glm::inverse(worldMatrix());
 }
+
+std::string Transform::name() const { return std::string(staticName); }
 
 }  // namespace avenir::scene::components
