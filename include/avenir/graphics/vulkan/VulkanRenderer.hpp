@@ -65,7 +65,7 @@ private:
     uint32_t findMemoryType(uint32_t typeFilter, vk::MemoryPropertyFlags properties);
     void createBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties, vk::raii::Buffer &buffer, vk::raii::DeviceMemory &bufferMemory);
     void copyBuffer(const vk::raii::Buffer &sourceBuffer,
-                    const vk::raii::Buffer &destinationBuffer, vk::DeviceSize size);
+                    const vk::raii::Buffer &destinationBuffer, vk::DeviceSize size) const;
     void updateUniformBuffer(uint32_t currentImage,
                              const glm::mat4 &viewMatrix) const;
 

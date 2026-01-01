@@ -1,32 +1,39 @@
-#include <avenir/graphics/Renderer.hpp>
-#include <avenir/input/InputManager.hpp>
-#include <avenir/platform/Time.hpp>
-#include <avenir/platform/Window.hpp>
-#include <avenir/scene/components/Camera.hpp>
+#include <avenir/avenir.hpp>
 
 #include "FPSController.hpp"
 
 int main(int argc, char *argv[]) {
-    auto window = avenir::platform::Window(640, 480, "Simple FPS");
+    auto window = avenir::platform::Window(960, 720, "Simple FPS");
+    avenir::InputManager inputManager(window);
+    avenir::Time time;
 
-    const auto renderer = avenir::graphics::Renderer::create(
-        window, avenir::graphics::Api::eVulkan);
+    const auto renderer =
+        avenir::Renderer::create(window, avenir::GraphicsApi::eVulkan);
 
-    avenir::scene::components::Camera mainCamera(
-        glm::vec3(0.0f, 0.0f, 2.0f), glm::vec3(0.0f, 1.0f, 0.0f), -90.0f, 0.0f);
+    avenir::Scene scene;
 
-    avenir::input::InputManager inputManager(window);
+    avenir::Entity &camera = scene.createEntity();
+    camera.addComponent<avenir::Transform>(glm::vec3(0.0f, 0.0f, 2.0f));
+    camera.addComponent<avenir::Camera>();
 
-    const FPSController fpsController(inputManager, mainCamera);
+    avenir::Entity &player = scene.createEntity();
+    player.addComponent<avenir::Transform>();
 
-    avenir::platform::Time time;
+    avenir::Entity &enemy = scene.createEntity();
+    enemy.addComponent<avenir::Transform>();
+
+    scene.printEntityIds();
+
+    FPSController fpsController(inputManager, camera);
+
     while (window.isOpen()) {
         time.tick();
-        avenir::platform::Window::pollEvents();
+        avenir::Window::pollEvents();
 
         fpsController.update(time.deltaTime());
 
-        renderer->drawFrame(mainCamera.viewMatrix());
+        renderer->drawFrame(
+            camera.component<avenir::Transform>().inverseWorldMatrix());
     }
 
     return 0;

@@ -137,22 +137,21 @@ std::vector<const char *> VulkanRenderer::findRequiredInstanceLayers() const {
     // Retrieve the required layers
     std::vector<char const *> layers;
     if (m_shouldUseValidationLayers) {
-        layers.assign(m_validationLayers.begin(),
-                              m_validationLayers.end());
+        layers.assign(m_validationLayers.begin(), m_validationLayers.end());
     }
 
     // Check if required layers are supported by current Vulkan implementation
     if (auto instanceLayerProperties =
             m_context.enumerateInstanceLayerProperties();
-        std::ranges::any_of(layers, [&instanceLayerProperties](
-                                                auto const &requiredLayer) {
-            return std::ranges::none_of(
-                instanceLayerProperties,
-                [requiredLayer](auto const &instanceLayerProperty) {
-                    return strcmp(instanceLayerProperty.layerName,
-                                  requiredLayer) == 0;
-                });
-        })) {
+        std::ranges::any_of(
+            layers, [&instanceLayerProperties](auto const &requiredLayer) {
+                return std::ranges::none_of(
+                    instanceLayerProperties,
+                    [requiredLayer](auto const &instanceLayerProperty) {
+                        return strcmp(instanceLayerProperty.layerName,
+                                      requiredLayer) == 0;
+                    });
+            })) {
         throw std::runtime_error(
             "[Vulkan] Error: One or more required layers are not supported!\n");
     }
@@ -407,7 +406,7 @@ void VulkanRenderer::createBuffer(vk::DeviceSize size,
 
 void VulkanRenderer::copyBuffer(const vk::raii::Buffer &sourceBuffer,
                                 const vk::raii::Buffer &destinationBuffer,
-                                const vk::DeviceSize size) {
+                                const vk::DeviceSize size) const {
     const vk::CommandBufferAllocateInfo allocInfo =
         vk::CommandBufferAllocateInfo()
             .setCommandPool(m_commandPool)
@@ -433,7 +432,8 @@ void VulkanRenderer::copyBuffer(const vk::raii::Buffer &sourceBuffer,
     m_queue.waitIdle();
 }
 
-void VulkanRenderer::updateUniformBuffer(const uint32_t currentImage, const glm::mat4 &viewMatrix) const {
+void VulkanRenderer::updateUniformBuffer(const uint32_t currentImage,
+                                         const glm::mat4 &viewMatrix) const {
     UniformBufferObject ubo{};
     ubo.model = glm::mat4(1.0f);
     ubo.view = viewMatrix;
@@ -524,7 +524,8 @@ void VulkanRenderer::setupDebugMessenger() {
 
 void VulkanRenderer::createSurface() {
     VkSurfaceKHR surface;
-    if (glfwCreateWindowSurface(*m_instance, m_glfwWindow, nullptr, &surface) != VK_SUCCESS) {
+    if (glfwCreateWindowSurface(*m_instance, m_glfwWindow, nullptr, &surface) !=
+        VK_SUCCESS) {
         throw std::runtime_error(
             "[Vulkan] Error: Failed to create window surface!");
     }

@@ -14,6 +14,9 @@ add_library(${PROJECT_NAME}
         src/input/InputManager.cpp
 
         src/scene/Scene.cpp
+        src/scene/Entity.cpp
+        src/scene/components/Transform.cpp
+        src/scene/components/MeshRenderer.cpp
         src/scene/components/Camera.cpp
 
         src/graphics/Renderer.cpp
