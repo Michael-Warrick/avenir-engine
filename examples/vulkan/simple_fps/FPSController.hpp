@@ -12,6 +12,12 @@ public:
     void update(float deltaTime);
 
 private:
+    [[nodiscard]] std::optional<avenir::Entity *>
+    findChildEntityWithCameraComponent() const;
+
+    static void checkIfCameraEntityIsPrimary(
+        const avenir::Entity &cameraEntity);
+
     void handleKeyboardInput(float deltaTime) const;
     void handleMousePosition();
 
