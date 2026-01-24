@@ -46,5 +46,13 @@ function(add_slang_shader_target_simple_fps TARGET)
     add_custom_target(${TARGET} DEPENDS ${OUTPUTS})
 endfunction()
 
+# Copy textures folder to binary folder
+add_custom_target(simple_fps_textures ALL
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_CURRENT_SOURCE_DIR}/resources/textures
+        ${CMAKE_CURRENT_BINARY_DIR}/resources/textures
+        COMMENT "Copying textures to binary resource directory"
+)
+
 add_slang_shader_target_simple_fps(simple_fps_shader SOURCES resources/shaders/shader.slang)
-add_dependencies(simple_fps simple_fps_shader)
+add_dependencies(simple_fps simple_fps_shader simple_fps_textures)

@@ -3,6 +3,8 @@
 
 #include <unordered_map>
 
+#include <glm/mat4x4.hpp>
+
 #include "avenir/scene/Entity.hpp"
 
 namespace avenir::scene {
@@ -16,7 +18,10 @@ public:
     std::optional<Entity *> findEntityById(uint32_t id);
 
     void setEntityParent(uint32_t child, std::optional<uint32_t> parent);
-    void detatchEntityFromParent(uint32_t child);
+    void detachEntityFromParent(uint32_t child);
+
+    glm::mat4 entityWorldMatrix(uint32_t id);
+    glm::mat4 entityInverseWorldMatrix(uint32_t id);
 
     void printEntityIds();
 

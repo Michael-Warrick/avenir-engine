@@ -15,6 +15,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include "avenir/graphics/stb_image.h"
+
 #include "avenir/graphics/Renderer.hpp"
 
 namespace avenir::graphics::vulkan {
@@ -35,11 +37,14 @@ private:
             return {0, sizeof(Vertex), vk::VertexInputRate::eVertex};
         }
 
-        static std::array<vk::VertexInputAttributeDescription, 2> getAttributeDescriptions() {
-            return {
-                vk::VertexInputAttributeDescription(0, 0, vk::Format::eR32G32Sfloat, offsetof(Vertex, position)),
-                vk::VertexInputAttributeDescription(1, 0, vk::Format::eR32G32B32Sfloat, offsetof(Vertex, color))
-            };
+        static std::array<vk::VertexInputAttributeDescription, 2>
+        getAttributeDescriptions() {
+            return {vk::VertexInputAttributeDescription(
+                        0, 0, vk::Format::eR32G32Sfloat,
+                        offsetof(Vertex, position)),
+                    vk::VertexInputAttributeDescription(
+                        1, 0, vk::Format::eR32G32B32Sfloat,
+                        offsetof(Vertex, color))};
         }
     };
 
@@ -50,27 +55,63 @@ private:
     };
 
     void printAllAvailableInstanceExtensions() const;
-    [[nodiscard]] std::vector<const char*> findRequiredInstanceLayers() const;
-    static std::vector<const char*> findRequiredInstanceExtensions();
-    static VKAPI_ATTR vk::Bool32 VKAPI_CALL debugCallback(vk::DebugUtilsMessageSeverityFlagBitsEXT severity, vk::DebugUtilsMessageTypeFlagsEXT type, const vk::DebugUtilsMessengerCallbackDataEXT* pCallbackData, void*);
-    static uint32_t chooseSwapMinImageCount(vk::SurfaceCapabilitiesKHR const &surfaceCapabilities);
-    static vk::SurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<vk::SurfaceFormatKHR> &availableFormats);
-    static vk::PresentModeKHR chooseSwapPresentMode(const std::vector<vk::PresentModeKHR> &availablePresentModes);
-    vk::Extent2D chooseSwapExtent(const vk::SurfaceCapabilitiesKHR &capabilities);
-    [[nodiscard]] vk::raii::ShaderModule createShaderModule(const std::vector<char> &code) const;
+    [[nodiscard]] std::vector<const char *> findRequiredInstanceLayers() const;
+    static std::vector<const char *> findRequiredInstanceExtensions();
+    static VKAPI_ATTR vk::Bool32 VKAPI_CALL debugCallback(
+        vk::DebugUtilsMessageSeverityFlagBitsEXT severity,
+        vk::DebugUtilsMessageTypeFlagsEXT type,
+        const vk::DebugUtilsMessengerCallbackDataEXT *pCallbackData, void *);
+    static uint32_t chooseSwapMinImageCount(
+        vk::SurfaceCapabilitiesKHR const &surfaceCapabilities);
+    static vk::SurfaceFormatKHR chooseSwapSurfaceFormat(
+        const std::vector<vk::SurfaceFormatKHR> &availableFormats);
+    static vk::PresentModeKHR chooseSwapPresentMode(
+        const std::vector<vk::PresentModeKHR> &availablePresentModes);
+    vk::Extent2D chooseSwapExtent(
+        const vk::SurfaceCapabilitiesKHR &capabilities);
+    [[nodiscard]] vk::raii::ShaderModule createShaderModule(
+        const std::vector<char> &code) const;
     void recordCommandBuffer(uint32_t imageIndex);
-    void transitionImageLayout(uint32_t imageIndex, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, vk::AccessFlags2 sourceAccessMask, vk::AccessFlags2 destinationAccessMask, vk::PipelineStageFlags2 sourceStageMask, vk::PipelineStageFlags2 destinationStageMask);
+    void transitionImageLayout(uint32_t imageIndex, vk::ImageLayout oldLayout,
+                               vk::ImageLayout newLayout,
+                               vk::AccessFlags2 sourceAccessMask,
+                               vk::AccessFlags2 destinationAccessMask,
+                               vk::PipelineStageFlags2 sourceStageMask,
+                               vk::PipelineStageFlags2 destinationStageMask);
     void cleanupSwapchain();
     void recreateSwapchain();
-    uint32_t findMemoryType(uint32_t typeFilter, vk::MemoryPropertyFlags properties);
-    void createBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties, vk::raii::Buffer &buffer, vk::raii::DeviceMemory &bufferMemory);
+    uint32_t findMemoryType(uint32_t typeFilter,
+                            vk::MemoryPropertyFlags properties);
+    void createBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage,
+                      vk::MemoryPropertyFlags properties,
+                      vk::raii::Buffer &buffer,
+                      vk::raii::DeviceMemory &bufferMemory);
     void copyBuffer(const vk::raii::Buffer &sourceBuffer,
-                    const vk::raii::Buffer &destinationBuffer, vk::DeviceSize size) const;
+                    const vk::raii::Buffer &destinationBuffer,
+                    vk::DeviceSize size) const;
+
+    void copyBufferToImage(const vk::raii::Buffer &buffer,
+                           const vk::raii::Image &image, uint32_t width,
+                           uint32_t height) const;
+
     void updateUniformBuffer(uint32_t currentImage,
                              const glm::mat4 &viewMatrix) const;
 
     // std::filesystem::path getResourcePath(const std::string& relativePath);
     static std::vector<char> readFile(const std::string &fileName);
+
+    void createImage(uint32_t width, uint32_t height, vk::Format format,
+                     vk::ImageTiling tiling, vk::ImageUsageFlags usage,
+                     vk::MemoryPropertyFlags properties, vk::raii::Image &image,
+                     vk::raii::DeviceMemory &imageMemory);
+
+    [[nodiscard]] vk::raii::CommandBuffer beginSingleTimeCommands() const;
+    void endSingleTimeCommands(
+        const vk::raii::CommandBuffer &commandBuffer) const;
+
+    void transitionImageLayout(const vk::raii::Image &image,
+                               vk::ImageLayout oldLayout,
+                               vk::ImageLayout newLayout);
 
     void createInstance();
     void setupDebugMessenger();
@@ -82,6 +123,7 @@ private:
     void createDescriptorSetLayout();
     void createGraphicsPipeline();
     void createCommandPool();
+    void createTextureImage();
     void createVertexBuffer();
     void createIndexBuffer();
     void createUniformBuffers();
@@ -114,6 +156,9 @@ private:
     vk::raii::Pipeline m_graphicsPipeline = nullptr;
     vk::raii::CommandPool m_commandPool = nullptr;
 
+    vk::raii::Image m_textureImage = nullptr;
+    vk::raii::DeviceMemory m_textureImageMemory = nullptr;
+
     vk::raii::Buffer m_vertexBuffer = nullptr;
     vk::raii::DeviceMemory m_vertexBufferMemory = nullptr;
     vk::raii::Buffer m_indexBuffer = nullptr;
@@ -141,13 +186,11 @@ private:
     static constexpr bool m_shouldUseValidationLayers = true;
 #endif
 
-    const std::vector<const char*> m_validationLayers = {
-        "VK_LAYER_KHRONOS_validation"
-    };
+    const std::vector<const char *> m_validationLayers = {
+        "VK_LAYER_KHRONOS_validation"};
 
-    const std::vector<const char*> m_deviceExtensions = {
-        vk::KHRSwapchainExtensionName,
-        vk::KHRSpirv14ExtensionName,
+    const std::vector<const char *> m_deviceExtensions = {
+        vk::KHRSwapchainExtensionName, vk::KHRSpirv14ExtensionName,
         vk::KHRSynchronization2ExtensionName,
         vk::KHRCreateRenderpass2ExtensionName,
 #if defined(__APPLE__)
@@ -160,12 +203,9 @@ private:
         {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
         {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
         {{0.5, 0.5}, {0.0f, 0.0f, 1.0f}},
-        {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
-    };
+        {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}};
 
-    const std::vector<uint16_t> m_indices {
-        0, 1, 2, 2, 3, 0
-    };
+    const std::vector<uint16_t> m_indices{0, 1, 2, 2, 3, 0};
 };
-} // namespace avenir::graphics::vulkan
-#endif // VULKANRENDERER_HPP
+}  // namespace avenir::graphics::vulkan
+#endif  // VULKANRENDERER_HPP

@@ -3,7 +3,7 @@
 #include "FPSController.hpp"
 
 int main(int argc, char *argv[]) {
-    auto window = avenir::platform::Window(960, 720, "Simple FPS");
+    auto window = avenir::Window(960, 720, "Simple FPS");
     avenir::InputManager inputManager(window);
     avenir::Time time;
 
@@ -12,15 +12,18 @@ int main(int argc, char *argv[]) {
 
     avenir::Scene scene;
 
-    const avenir::Entity &player = scene.createEntity();
+    avenir::Entity &player = scene.createEntity();
+    player.component<avenir::Transform>().position =
+        glm::vec3(0.0f, 0.0f, 2.0f);
+
     avenir::Entity &camera = scene.createEntity();
     camera.component<avenir::Transform>().position =
-        glm::vec3(0.0f, 0.0f, 2.0f);
+        glm::vec3(0.0f, 0.8f, 0.0f);
     camera.addComponent<avenir::Camera>();
 
     scene.setEntityParent(camera.id(), player.id());
 
-    FPSController fpsController(inputManager, camera);
+    FPSController fpsController(player, scene, inputManager);
 
     while (window.isOpen()) {
         time.tick();
@@ -28,8 +31,7 @@ int main(int argc, char *argv[]) {
 
         fpsController.update(time.deltaTime());
 
-        renderer->drawFrame(
-            camera.component<avenir::Transform>().inverseWorldMatrix());
+        renderer->drawFrame(scene.entityInverseWorldMatrix(camera.id()));
     }
 
     return 0;

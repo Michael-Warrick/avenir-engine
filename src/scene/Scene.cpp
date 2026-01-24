@@ -1,5 +1,7 @@
 #include "avenir/scene/Scene.hpp"
 
+#include "avenir/avenir.hpp"
+
 #include <iostream>
 #include <ranges>
 
@@ -41,8 +43,25 @@ void Scene::setEntityParent(const uint32_t child,
     }
 }
 
-void Scene::detatchEntityFromParent(uint32_t child) {
+void Scene::detachEntityFromParent(uint32_t child) {
     setEntityParent(child, std::nullopt);
+}
+
+glm::mat4 Scene::entityWorldMatrix(uint32_t id) {
+    const std::optional<Entity *> entity = findEntityById(id);
+    const auto &entityTransform =
+        entity.value()->component<avenir::scene::components::Transform>();
+
+    const glm::mat4 localMatrix = entityTransform.localMatrix();
+    if (!entity.value()->parent().has_value()) {
+        return localMatrix;
+    }
+
+    return entityWorldMatrix(*entity.value()->parent()) * localMatrix;
+}
+
+glm::mat4 Scene::entityInverseWorldMatrix(uint32_t id) {
+    return glm::inverse(entityWorldMatrix(id));
 }
 
 void Scene::printEntityIds() {

@@ -13,9 +13,13 @@ namespace avenir::scene {
 class Entity {
 public:
     explicit Entity(uint32_t id);
+    Entity(Entity const &other);
+    Entity(Entity &&other) = default;
+    Entity &operator=(Entity const &other);
+    Entity &operator=(Entity &&other) noexcept = default;
 
     template <typename T>
-    [[nodiscard]] bool has() const {
+    [[nodiscard]] bool hasComponent() const {
         static_assert(std::is_base_of_v<Component, T>);
 
         return std::ranges::any_of(
@@ -27,7 +31,7 @@ public:
     template <typename T, typename... Args>
     T &addComponent(Args &&...args) {
         static_assert(std::is_base_of_v<Component, T>);
-        if (has<T>()) {
+        if (hasComponent<T>()) {
             std::ostringstream errorMessage;
             errorMessage << "Error: Entity already has component of type: "
                          << T::staticName;

@@ -5,7 +5,8 @@
 
 class FPSController {
 public:
-    FPSController(avenir::InputManager &inputManager, avenir::Entity &camera);
+    FPSController(avenir::Entity &player, avenir::Scene &scene,
+                  avenir::InputManager &inputManager);
     ~FPSController() = default;
 
     void update(float deltaTime);
@@ -14,8 +15,12 @@ private:
     void handleKeyboardInput(float deltaTime) const;
     void handleMousePosition();
 
+    avenir::Entity &m_player;
+    avenir::Entity *m_camera;
+
+    avenir::Scene &m_scene;
+
     avenir::InputManager &m_inputManager;
-    avenir::Entity &m_camera;
 
     float m_movementSpeed = 2.5f;
     float m_mouseSensitivity = 0.1f;

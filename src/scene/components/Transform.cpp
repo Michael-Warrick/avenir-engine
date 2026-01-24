@@ -30,7 +30,7 @@ glm::vec3 Transform::right() const {
     return glm::normalize(rotation * glm::vec3(1.0f, 0.0f, 0.0f));
 }
 
-glm::mat4 Transform::worldMatrix() const {
+glm::mat4 Transform::localMatrix() const {
     const glm::mat4 T = glm::translate(glm::mat4(1.0f), position);
     const glm::mat4 R = glm::mat4_cast(rotation);
     const glm::mat4 S = glm::scale(glm::mat4(1.0f), scale);
@@ -38,8 +38,12 @@ glm::mat4 Transform::worldMatrix() const {
     return T * R * S;
 }
 
-glm::mat4 Transform::inverseWorldMatrix() const {
-    return glm::inverse(worldMatrix());
+glm::mat4 Transform::inverseLocalMatrix() const {
+    return glm::inverse(localMatrix());
+}
+
+std::unique_ptr<Component> Transform::clone() const {
+    return std::make_unique<Transform>(*this);
 }
 
 std::string Transform::name() const { return std::string(staticName); }

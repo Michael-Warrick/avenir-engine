@@ -21,6 +21,7 @@ VulkanRenderer::VulkanRenderer(GLFWwindow *window) : m_glfwWindow(window) {
     createDescriptorSetLayout();
     createGraphicsPipeline();
     createCommandPool();
+    createTextureImage();
     createVertexBuffer();
     createIndexBuffer();
     createUniformBuffers();
@@ -268,7 +269,7 @@ void VulkanRenderer::recordCommandBuffer(uint32_t imageIndex) {
                           vk::PipelineStageFlagBits2::eColorAttachmentOutput,
                           vk::PipelineStageFlagBits2::eColorAttachmentOutput);
 
-    vk::ClearValue clearColor = vk::ClearColorValue(0.0f, 0.0f, 0.0f, 1.0f);
+    vk::ClearValue clearColor = vk::ClearColorValue(0.529, 0.807, 0.921, 1.0f);
     vk::RenderingAttachmentInfo attachmentInfo =
         vk::RenderingAttachmentInfo()
             .setImageView(m_swapchainImageViews[imageIndex])
@@ -407,29 +408,32 @@ void VulkanRenderer::createBuffer(vk::DeviceSize size,
 void VulkanRenderer::copyBuffer(const vk::raii::Buffer &sourceBuffer,
                                 const vk::raii::Buffer &destinationBuffer,
                                 const vk::DeviceSize size) const {
-    const vk::CommandBufferAllocateInfo allocInfo =
-        vk::CommandBufferAllocateInfo()
-            .setCommandPool(m_commandPool)
-            .setLevel(vk::CommandBufferLevel::ePrimary)
-            .setCommandBufferCount(1);
-
-    const vk::raii::CommandBuffer commandCopyBuffer =
-        std::move(m_logicalDevice.allocateCommandBuffers(allocInfo).front());
-    constexpr vk::CommandBufferBeginInfo beginInfo =
-        vk::CommandBufferBeginInfo().setFlags(
-            vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
-
-    commandCopyBuffer.begin(beginInfo);
-    commandCopyBuffer.copyBuffer(*sourceBuffer, *destinationBuffer,
+    const vk::raii::CommandBuffer commandCopyBuffer = beginSingleTimeCommands();
+    commandCopyBuffer.copyBuffer(sourceBuffer, destinationBuffer,
                                  vk::BufferCopy(0, 0, size));
-    commandCopyBuffer.end();
+    endSingleTimeCommands(commandCopyBuffer);
+}
 
-    const vk::SubmitInfo submitInfo =
-        vk::SubmitInfo().setCommandBufferCount(1).setPCommandBuffers(
-            &*commandCopyBuffer);
+void VulkanRenderer::copyBufferToImage(const vk::raii::Buffer &buffer,
+                                       const vk::raii::Image &image,
+                                       const uint32_t width,
+                                       const uint32_t height) const {
+    const vk::raii::CommandBuffer commandBuffer = beginSingleTimeCommands();
 
-    m_queue.submit(submitInfo, nullptr);
-    m_queue.waitIdle();
+    vk::BufferImageCopy region =
+        vk::BufferImageCopy()
+            .setBufferOffset(0)
+            .setBufferRowLength(0)
+            .setBufferImageHeight(0)
+            .setImageSubresource(vk::ImageSubresourceLayers(
+                vk::ImageAspectFlagBits::eColor, 0, 0, 1))
+            .setImageOffset(vk::Offset3D(0, 0, 0))
+            .setImageExtent(vk::Extent3D(width, height, 1));
+
+    commandBuffer.copyBufferToImage(
+        buffer, image, vk::ImageLayout::eTransferDstOptimal, {region});
+
+    endSingleTimeCommands(commandBuffer);
 }
 
 void VulkanRenderer::updateUniformBuffer(const uint32_t currentImage,
@@ -463,6 +467,107 @@ std::vector<char> VulkanRenderer::readFile(const std::string &fileName) {
     file.close();
 
     return buffer;
+}
+
+void VulkanRenderer::createImage(const uint32_t width, const uint32_t height,
+                                 vk::Format format, vk::ImageTiling tiling,
+                                 const vk::ImageUsageFlags usage,
+                                 const vk::MemoryPropertyFlags properties,
+                                 vk::raii::Image &image,
+                                 vk::raii::DeviceMemory &imageMemory) {
+    const vk::ImageCreateInfo imageInfo =
+        vk::ImageCreateInfo()
+            .setImageType(vk::ImageType::e2D)
+            .setFormat(format)
+            .setExtent(vk::Extent3D(width, height, 1))
+            .setMipLevels(1)
+            .setArrayLayers(1)
+            .setSamples(vk::SampleCountFlagBits::e1)
+            .setTiling(tiling)
+            .setUsage(usage)
+            .setSharingMode(vk::SharingMode::eExclusive);
+
+    image = vk::raii::Image(m_logicalDevice, imageInfo);
+
+    const vk::MemoryRequirements memoryRequirements =
+        image.getMemoryRequirements();
+    const vk::MemoryAllocateInfo memoryAllocInfo =
+        vk::MemoryAllocateInfo()
+            .setAllocationSize(memoryRequirements.size)
+            .setMemoryTypeIndex(
+                findMemoryType(memoryRequirements.memoryTypeBits, properties));
+
+    imageMemory = vk::raii::DeviceMemory(m_logicalDevice, memoryAllocInfo);
+    image.bindMemory(imageMemory, 0);
+}
+
+vk::raii::CommandBuffer VulkanRenderer::beginSingleTimeCommands() const {
+    const vk::CommandBufferAllocateInfo allocInfo =
+        vk::CommandBufferAllocateInfo()
+            .setCommandPool(m_commandPool)
+            .setLevel(vk::CommandBufferLevel::ePrimary)
+            .setCommandBufferCount(1);
+
+    vk::raii::CommandBuffer commandBuffer =
+        std::move(m_logicalDevice.allocateCommandBuffers(allocInfo).front());
+
+    constexpr vk::CommandBufferBeginInfo beginInfo =
+        vk::CommandBufferBeginInfo().setFlags(
+            vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
+
+    commandBuffer.begin(beginInfo);
+
+    return commandBuffer;
+}
+
+void VulkanRenderer::endSingleTimeCommands(
+    const vk::raii::CommandBuffer &commandBuffer) const {
+    commandBuffer.end();
+
+    const vk::SubmitInfo submitInfo =
+        vk::SubmitInfo().setCommandBufferCount(1).setPCommandBuffers(
+            &*commandBuffer);
+    m_queue.submit(submitInfo, nullptr);
+    m_queue.waitIdle();
+}
+
+void VulkanRenderer::transitionImageLayout(const vk::raii::Image &image,
+                                           vk::ImageLayout oldLayout,
+                                           vk::ImageLayout newLayout) {
+    vk::raii::CommandBuffer commandBuffer = beginSingleTimeCommands();
+
+    vk::ImageMemoryBarrier barrier =
+        vk::ImageMemoryBarrier()
+            .setOldLayout(oldLayout)
+            .setNewLayout(newLayout)
+            .setImage(image)
+            .setSubresourceRange(vk::ImageSubresourceRange(
+                vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1));
+
+    vk::PipelineStageFlags sourceStage;
+    vk::PipelineStageFlags destinationStage;
+
+    if (oldLayout == vk::ImageLayout::eUndefined &&
+        newLayout == vk::ImageLayout::eTransferDstOptimal) {
+        barrier.setSrcAccessMask({});
+        barrier.setDstAccessMask(vk::AccessFlagBits::eTransferWrite);
+
+        sourceStage = vk::PipelineStageFlagBits::eTopOfPipe;
+        destinationStage = vk::PipelineStageFlagBits::eTransfer;
+    } else if (oldLayout == vk::ImageLayout::eTransferDstOptimal &&
+               newLayout == vk::ImageLayout::eShaderReadOnlyOptimal) {
+        barrier.setSrcAccessMask(vk::AccessFlagBits::eTransferWrite);
+        barrier.setDstAccessMask(vk::AccessFlagBits::eShaderRead);
+
+        sourceStage = vk::PipelineStageFlagBits::eTransfer;
+        destinationStage = vk::PipelineStageFlagBits::eFragmentShader;
+    } else {
+        throw std::runtime_error("Error: Unsupported layout transition!\n");
+    }
+
+    commandBuffer.pipelineBarrier(sourceStage, destinationStage, {}, {},
+                                  nullptr, barrier);
+    endSingleTimeCommands(commandBuffer);
 }
 
 void VulkanRenderer::createInstance() {
@@ -852,6 +957,53 @@ void VulkanRenderer::createCommandPool() {
     m_commandPool = vk::raii::CommandPool(m_logicalDevice, poolInfo);
 
     std::cout << "[Vulkan] Created: Command Pool\n";
+}
+
+void VulkanRenderer::createTextureImage() {
+    int textureWidth;
+    int textureHeight;
+    int textureChannels;
+
+    stbi_uc *pixels =
+        stbi_load("textures/parrot.jpg", &textureWidth, &textureHeight,
+                  &textureChannels, STBI_rgb_alpha);
+
+    const vk::DeviceSize imageSize = textureWidth * textureHeight * 4;
+    if (!pixels) {
+        throw std::runtime_error(
+            "Error: Failed to load parrot texture image!\n");
+    }
+
+    vk::raii::Buffer stagingBuffer({});
+    vk::raii::DeviceMemory stagingBufferMemory({});
+
+    createBuffer(imageSize, vk::BufferUsageFlagBits::eTransferSrc,
+                 vk::MemoryPropertyFlagBits::eHostVisible |
+                     vk::MemoryPropertyFlagBits::eHostCoherent,
+                 stagingBuffer, stagingBufferMemory);
+
+    void *data = stagingBufferMemory.mapMemory(0, imageSize);
+    memcpy(data, pixels, imageSize);
+    stagingBufferMemory.unmapMemory();
+
+    stbi_image_free(pixels);
+
+    createImage(
+        textureWidth, textureHeight, vk::Format::eR8G8B8A8Srgb,
+        vk::ImageTiling::eOptimal,
+        vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled,
+        vk::MemoryPropertyFlagBits::eDeviceLocal, m_textureImage,
+        m_textureImageMemory);
+
+    transitionImageLayout(m_textureImage, vk::ImageLayout::eUndefined,
+                          vk::ImageLayout::eTransferDstOptimal);
+    copyBufferToImage(stagingBuffer, m_textureImage,
+                      static_cast<uint32_t>(textureWidth),
+                      static_cast<uint32_t>(textureHeight));
+    transitionImageLayout(m_textureImage, vk::ImageLayout::eTransferDstOptimal,
+                          vk::ImageLayout::eShaderReadOnlyOptimal);
+
+    std::cout << "[Vulkan] Created: Texture Image\n";
 }
 
 void VulkanRenderer::createVertexBuffer() {

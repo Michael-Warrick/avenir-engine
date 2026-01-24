@@ -6,6 +6,7 @@
 namespace avenir::scene::components {
 
 struct Camera final : public Component {
+    [[nodiscard]] std::unique_ptr<Component> clone() const override;
     [[nodiscard]] std::string name() const override;
 
     float fov = 45.0f;

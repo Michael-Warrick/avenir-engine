@@ -4,6 +4,7 @@
 #include "avenir/scene/components/Transform.hpp"
 
 #include <iostream>
+#include <algorithm>
 
 namespace avenir::scene {
 
@@ -13,9 +14,36 @@ Entity::Entity(const uint32_t id) {
         std::make_unique<avenir::scene::components::Transform>());
 }
 
+Entity::Entity(const Entity &other) {
+    m_id = other.id();
+    m_parent = other.parent();
+    m_children = other.children();
+
+    m_components.clear();
+    m_components.reserve(other.components().size());
+    for (const auto &pComponent : other.components()) {
+        m_components.emplace_back(pComponent->clone());
+    }
+}
+
+Entity &Entity::operator=(Entity const &other) {
+    m_id = other.id();
+    m_parent = other.parent();
+    m_children = other.children();
+
+    m_components.clear();
+    m_components.reserve(other.components().size());
+    for (const auto &pComponent : other.components()) {
+        m_components.emplace_back(pComponent->clone());
+    }
+
+    return *this;
+}
+
 void Entity::listComponents() const {
+    std::cout << "[Entity] id: " << m_id << ", Components:\n";
     for (const auto &component : m_components) {
-        std::cout << "Component: " << component->name() << "\n";
+        std::cout << "\t\t " << component->name() << "\n";
     }
 }
 

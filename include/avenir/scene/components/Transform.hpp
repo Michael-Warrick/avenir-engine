@@ -27,9 +27,10 @@ struct Transform final : public Component {
     [[nodiscard]] glm::vec3 forward() const;
     [[nodiscard]] glm::vec3 up() const;
     [[nodiscard]] glm::vec3 right() const;
-    [[nodiscard]] glm::mat4 worldMatrix() const;
-    [[nodiscard]] glm::mat4 inverseWorldMatrix() const;
+    [[nodiscard]] glm::mat4 localMatrix() const;
+    [[nodiscard]] glm::mat4 inverseLocalMatrix() const;
 
+    [[nodiscard]] std::unique_ptr<Component> clone() const override;
     [[nodiscard]] std::string name() const override;
     static constexpr std::string_view staticName = "Transform";
 };
