@@ -841,12 +841,18 @@ void VulkanRenderer::createImageViews() {
 }
 
 void VulkanRenderer::createDescriptorSetLayout() {
-    vk::DescriptorSetLayoutBinding uboLayoutBinding(
-        0, vk::DescriptorType::eUniformBuffer, 1,
-        vk::ShaderStageFlagBits::eVertex, nullptr);
-    vk::DescriptorSetLayoutCreateInfo layoutInfo =
-        vk::DescriptorSetLayoutCreateInfo().setBindingCount(1).setPBindings(
-            &uboLayoutBinding);
+    std::array<vk::DescriptorSetLayoutBinding, 2> bindings = {
+        vk::DescriptorSetLayoutBinding(0, vk::DescriptorType::eUniformBuffer, 1,
+                                       vk::ShaderStageFlagBits::eVertex,
+                                       nullptr),
+        vk::DescriptorSetLayoutBinding(
+            1, vk::DescriptorType::eCombinedImageSampler, 1,
+            vk::ShaderStageFlagBits::eFragment, nullptr)};
+
+    const vk::DescriptorSetLayoutCreateInfo layoutInfo =
+        vk::DescriptorSetLayoutCreateInfo()
+            .setBindingCount(bindings.size())
+            .setPBindings(bindings.data());
 
     m_descriptorSetLayout =
         vk::raii::DescriptorSetLayout(m_logicalDevice, layoutInfo);
@@ -1123,14 +1129,18 @@ void VulkanRenderer::createUniformBuffers() {
 }
 
 void VulkanRenderer::createDescriptorPool() {
-    vk::DescriptorPoolSize poolSize(vk::DescriptorType::eUniformBuffer,
-                                    m_kFramesInFlight);
+    std::array<vk::DescriptorPoolSize, 2> poolSize = {
+        vk::DescriptorPoolSize(vk::DescriptorType::eUniformBuffer,
+                               m_kFramesInFlight),
+        vk::DescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler,
+                               m_kFramesInFlight)};
+
     vk::DescriptorPoolCreateInfo poolInfo =
         vk::DescriptorPoolCreateInfo()
             .setFlags(vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet)
             .setMaxSets(m_kFramesInFlight)
-            .setPoolSizeCount(1)
-            .setPPoolSizes(&poolSize);
+            .setPoolSizeCount(poolSize.size())
+            .setPPoolSizes(poolSize.data());
 
     m_descriptorPool = vk::raii::DescriptorPool(m_logicalDevice, poolInfo);
 }
@@ -1154,16 +1164,30 @@ void VulkanRenderer::createDescriptorSets() {
                 .setOffset(0)
                 .setRange(sizeof(UniformBufferObject));
 
-        vk::WriteDescriptorSet descriptorWrite =
+        vk::DescriptorImageInfo imageInfo =
+            vk::DescriptorImageInfo()
+                .setSampler(m_textureSampler)
+                .setImageView(m_textureImageView)
+                .setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
+
+        std::array<vk::WriteDescriptorSet, 2> descriptorWrites{
             vk::WriteDescriptorSet()
                 .setDstSet(m_descriptorSets[i])
                 .setDstBinding(0)
                 .setDstArrayElement(0)
                 .setDescriptorCount(1)
                 .setDescriptorType(vk::DescriptorType::eUniformBuffer)
-                .setPBufferInfo(&bufferInfo);
+                .setPBufferInfo(&bufferInfo),
 
-        m_logicalDevice.updateDescriptorSets(descriptorWrite, {});
+            vk::WriteDescriptorSet()
+                .setDstSet(m_descriptorSets[i])
+                .setDstBinding(1)
+                .setDstArrayElement(0)
+                .setDescriptorCount(1)
+                .setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
+                .setPImageInfo(&imageInfo)};
+
+        m_logicalDevice.updateDescriptorSets(descriptorWrites, {});
     }
 }
 
