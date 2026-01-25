@@ -3,7 +3,7 @@
 #include "FPSController.hpp"
 
 int main(int argc, char *argv[]) {
-    auto window = avenir::Window(960, 720, "Simple FPS");
+    avenir::Window window(960, 720, "Simple FPS");
     avenir::InputManager inputManager(window);
     avenir::Time time;
 

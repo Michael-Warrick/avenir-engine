@@ -47,7 +47,7 @@ void Scene::detachEntityFromParent(uint32_t child) {
     setEntityParent(child, std::nullopt);
 }
 
-glm::mat4 Scene::entityWorldMatrix(uint32_t id) {
+glm::mat4 Scene::entityWorldMatrix(const uint32_t id) {
     const std::optional<Entity *> entity = findEntityById(id);
     const auto &entityTransform =
         entity.value()->component<avenir::scene::components::Transform>();
@@ -60,7 +60,7 @@ glm::mat4 Scene::entityWorldMatrix(uint32_t id) {
     return entityWorldMatrix(*entity.value()->parent()) * localMatrix;
 }
 
-glm::mat4 Scene::entityInverseWorldMatrix(uint32_t id) {
+glm::mat4 Scene::entityInverseWorldMatrix(const uint32_t id) {
     return glm::inverse(entityWorldMatrix(id));
 }
 

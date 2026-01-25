@@ -22,6 +22,8 @@ VulkanRenderer::VulkanRenderer(GLFWwindow *window) : m_glfwWindow(window) {
     createGraphicsPipeline();
     createCommandPool();
     createTextureImage();
+    createTextureImageView();
+    createTextureSampler();
     createVertexBuffer();
     createIndexBuffer();
     createUniformBuffers();
@@ -321,6 +323,45 @@ void VulkanRenderer::recordCommandBuffer(uint32_t imageIndex) {
     m_commandBuffers[m_currentFrame].end();
 }
 
+void VulkanRenderer::transitionImageLayout(const vk::raii::Image &image,
+                                           vk::ImageLayout oldLayout,
+                                           vk::ImageLayout newLayout) {
+    vk::raii::CommandBuffer commandBuffer = beginSingleTimeCommands();
+
+    vk::ImageMemoryBarrier barrier =
+        vk::ImageMemoryBarrier()
+            .setOldLayout(oldLayout)
+            .setNewLayout(newLayout)
+            .setImage(image)
+            .setSubresourceRange(vk::ImageSubresourceRange(
+                vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1));
+
+    vk::PipelineStageFlags sourceStage;
+    vk::PipelineStageFlags destinationStage;
+
+    if (oldLayout == vk::ImageLayout::eUndefined &&
+        newLayout == vk::ImageLayout::eTransferDstOptimal) {
+        barrier.setSrcAccessMask({});
+        barrier.setDstAccessMask(vk::AccessFlagBits::eTransferWrite);
+
+        sourceStage = vk::PipelineStageFlagBits::eTopOfPipe;
+        destinationStage = vk::PipelineStageFlagBits::eTransfer;
+    } else if (oldLayout == vk::ImageLayout::eTransferDstOptimal &&
+               newLayout == vk::ImageLayout::eShaderReadOnlyOptimal) {
+        barrier.setSrcAccessMask(vk::AccessFlagBits::eTransferWrite);
+        barrier.setDstAccessMask(vk::AccessFlagBits::eShaderRead);
+
+        sourceStage = vk::PipelineStageFlagBits::eTransfer;
+        destinationStage = vk::PipelineStageFlagBits::eFragmentShader;
+    } else {
+        throw std::runtime_error("Error: Unsupported layout transition!\n");
+    }
+
+    commandBuffer.pipelineBarrier(sourceStage, destinationStage, {}, {},
+                                  nullptr, barrier);
+    endSingleTimeCommands(commandBuffer);
+}
+
 void VulkanRenderer::transitionImageLayout(
     uint32_t imageIndex, vk::ImageLayout oldLayout, vk::ImageLayout newLayout,
     vk::AccessFlags2 sourceAccessMask, vk::AccessFlags2 destinationAccessMask,
@@ -531,43 +572,17 @@ void VulkanRenderer::endSingleTimeCommands(
     m_queue.waitIdle();
 }
 
-void VulkanRenderer::transitionImageLayout(const vk::raii::Image &image,
-                                           vk::ImageLayout oldLayout,
-                                           vk::ImageLayout newLayout) {
-    vk::raii::CommandBuffer commandBuffer = beginSingleTimeCommands();
-
-    vk::ImageMemoryBarrier barrier =
-        vk::ImageMemoryBarrier()
-            .setOldLayout(oldLayout)
-            .setNewLayout(newLayout)
+vk::raii::ImageView VulkanRenderer::createImageView(vk::raii::Image &image,
+                                                    vk::Format format) {
+    vk::ImageViewCreateInfo viewInfo =
+        vk::ImageViewCreateInfo()
             .setImage(image)
+            .setViewType(vk::ImageViewType::e2D)
+            .setFormat(format)
             .setSubresourceRange(vk::ImageSubresourceRange(
                 vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1));
 
-    vk::PipelineStageFlags sourceStage;
-    vk::PipelineStageFlags destinationStage;
-
-    if (oldLayout == vk::ImageLayout::eUndefined &&
-        newLayout == vk::ImageLayout::eTransferDstOptimal) {
-        barrier.setSrcAccessMask({});
-        barrier.setDstAccessMask(vk::AccessFlagBits::eTransferWrite);
-
-        sourceStage = vk::PipelineStageFlagBits::eTopOfPipe;
-        destinationStage = vk::PipelineStageFlagBits::eTransfer;
-    } else if (oldLayout == vk::ImageLayout::eTransferDstOptimal &&
-               newLayout == vk::ImageLayout::eShaderReadOnlyOptimal) {
-        barrier.setSrcAccessMask(vk::AccessFlagBits::eTransferWrite);
-        barrier.setDstAccessMask(vk::AccessFlagBits::eShaderRead);
-
-        sourceStage = vk::PipelineStageFlagBits::eTransfer;
-        destinationStage = vk::PipelineStageFlagBits::eFragmentShader;
-    } else {
-        throw std::runtime_error("Error: Unsupported layout transition!\n");
-    }
-
-    commandBuffer.pipelineBarrier(sourceStage, destinationStage, {}, {},
-                                  nullptr, barrier);
-    endSingleTimeCommands(commandBuffer);
+    return vk::raii::ImageView(m_logicalDevice, viewInfo);
 }
 
 void VulkanRenderer::createInstance() {
@@ -679,6 +694,8 @@ void VulkanRenderer::pickPhysicalDevice() {
                 vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>();
 
             bool supportsRequiredFeatures =
+                features.template get<vk::PhysicalDeviceFeatures2>()
+                    .features.samplerAnisotropy &&
                 features.template get<vk::PhysicalDeviceVulkan11Features>()
                     .shaderDrawParameters &&
                 features.template get<vk::PhysicalDeviceVulkan13Features>()
@@ -730,13 +747,14 @@ void VulkanRenderer::createLogicalDevice() {
             "supporting both graphics and presentation!");
     }
 
-    // Query for Vulkan 1.3 features
+    // Query for Vulkan 1.3+ features
     vk::StructureChain<vk::PhysicalDeviceFeatures2,
                        vk::PhysicalDeviceVulkan11Features,
                        vk::PhysicalDeviceVulkan13Features,
                        vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>
         featureChain(
-            vk::PhysicalDeviceFeatures2{},
+            vk::PhysicalDeviceFeatures2{}.features = {{.samplerAnisotropy =
+                                                           vk::True}},
             vk::PhysicalDeviceVulkan11Features{}.setShaderDrawParameters(
                 vk::True),
             vk::PhysicalDeviceVulkan13Features{}
@@ -811,7 +829,7 @@ void VulkanRenderer::createImageViews() {
             .setSubresourceRange(vk::ImageSubresourceRange(
                 vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1));
 
-    for (auto image : m_swapchainImages) {
+    for (const auto image : m_swapchainImages) {
         imageViewCreateInfo.setImage(image);
         m_swapchainImageViews.emplace_back(m_logicalDevice,
                                            imageViewCreateInfo);
@@ -1004,6 +1022,35 @@ void VulkanRenderer::createTextureImage() {
                           vk::ImageLayout::eShaderReadOnlyOptimal);
 
     std::cout << "[Vulkan] Created: Texture Image\n";
+}
+
+void VulkanRenderer::createTextureImageView() {
+    m_textureImageView =
+        createImageView(m_textureImage, vk::Format::eR8G8B8A8Srgb);
+
+    std::cout << "[Vulkan] Created: Texture Image View\n";
+}
+
+void VulkanRenderer::createTextureSampler() {
+    vk::PhysicalDeviceProperties properties = m_physicalDevice.getProperties();
+
+    vk::SamplerCreateInfo samplerInfo =
+        vk::SamplerCreateInfo()
+            .setMagFilter(vk::Filter::eLinear)
+            .setMinFilter(vk::Filter::eLinear)
+            .setMipmapMode(vk::SamplerMipmapMode::eLinear)
+            .setAddressModeU(vk::SamplerAddressMode::eRepeat)
+            .setAddressModeV(vk::SamplerAddressMode::eRepeat)
+            .setAddressModeW(vk::SamplerAddressMode::eRepeat)
+            .setMipLodBias(0.0f)
+            .setAnisotropyEnable(vk::True)
+            .setMaxAnisotropy(properties.limits.maxSamplerAnisotropy)
+            .setCompareEnable(vk::False)
+            .setCompareOp(vk::CompareOp::eAlways);
+
+    m_textureSampler = vk::raii::Sampler(m_logicalDevice, samplerInfo);
+
+    std::cout << "[Vulkan] Created: Texture Sampler\n";
 }
 
 void VulkanRenderer::createVertexBuffer() {

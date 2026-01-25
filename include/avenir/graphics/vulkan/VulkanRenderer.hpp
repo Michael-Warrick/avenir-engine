@@ -55,37 +55,56 @@ private:
     };
 
     void printAllAvailableInstanceExtensions() const;
+
     [[nodiscard]] std::vector<const char *> findRequiredInstanceLayers() const;
+
     static std::vector<const char *> findRequiredInstanceExtensions();
+
     static VKAPI_ATTR vk::Bool32 VKAPI_CALL debugCallback(
         vk::DebugUtilsMessageSeverityFlagBitsEXT severity,
         vk::DebugUtilsMessageTypeFlagsEXT type,
         const vk::DebugUtilsMessengerCallbackDataEXT *pCallbackData, void *);
+
     static uint32_t chooseSwapMinImageCount(
         vk::SurfaceCapabilitiesKHR const &surfaceCapabilities);
+
     static vk::SurfaceFormatKHR chooseSwapSurfaceFormat(
         const std::vector<vk::SurfaceFormatKHR> &availableFormats);
+
     static vk::PresentModeKHR chooseSwapPresentMode(
         const std::vector<vk::PresentModeKHR> &availablePresentModes);
+
     vk::Extent2D chooseSwapExtent(
         const vk::SurfaceCapabilitiesKHR &capabilities);
+
     [[nodiscard]] vk::raii::ShaderModule createShaderModule(
         const std::vector<char> &code) const;
+
     void recordCommandBuffer(uint32_t imageIndex);
+
     void transitionImageLayout(uint32_t imageIndex, vk::ImageLayout oldLayout,
                                vk::ImageLayout newLayout,
                                vk::AccessFlags2 sourceAccessMask,
                                vk::AccessFlags2 destinationAccessMask,
                                vk::PipelineStageFlags2 sourceStageMask,
                                vk::PipelineStageFlags2 destinationStageMask);
+
+    void transitionImageLayout(const vk::raii::Image &image,
+                               vk::ImageLayout oldLayout,
+                               vk::ImageLayout newLayout);
+
     void cleanupSwapchain();
+
     void recreateSwapchain();
+
     uint32_t findMemoryType(uint32_t typeFilter,
                             vk::MemoryPropertyFlags properties);
+
     void createBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage,
                       vk::MemoryPropertyFlags properties,
                       vk::raii::Buffer &buffer,
                       vk::raii::DeviceMemory &bufferMemory);
+
     void copyBuffer(const vk::raii::Buffer &sourceBuffer,
                     const vk::raii::Buffer &destinationBuffer,
                     vk::DeviceSize size) const;
@@ -106,12 +125,12 @@ private:
                      vk::raii::DeviceMemory &imageMemory);
 
     [[nodiscard]] vk::raii::CommandBuffer beginSingleTimeCommands() const;
+
     void endSingleTimeCommands(
         const vk::raii::CommandBuffer &commandBuffer) const;
 
-    void transitionImageLayout(const vk::raii::Image &image,
-                               vk::ImageLayout oldLayout,
-                               vk::ImageLayout newLayout);
+    [[nodiscard]] vk::raii::ImageView createImageView(vk::raii::Image &image,
+                                                      vk::Format format);
 
     void createInstance();
     void setupDebugMessenger();
@@ -124,6 +143,8 @@ private:
     void createGraphicsPipeline();
     void createCommandPool();
     void createTextureImage();
+    void createTextureImageView();
+    void createTextureSampler();
     void createVertexBuffer();
     void createIndexBuffer();
     void createUniformBuffers();
@@ -158,6 +179,9 @@ private:
 
     vk::raii::Image m_textureImage = nullptr;
     vk::raii::DeviceMemory m_textureImageMemory = nullptr;
+
+    vk::raii::ImageView m_textureImageView = nullptr;
+    vk::raii::Sampler m_textureSampler = nullptr;
 
     vk::raii::Buffer m_vertexBuffer = nullptr;
     vk::raii::DeviceMemory m_vertexBufferMemory = nullptr;

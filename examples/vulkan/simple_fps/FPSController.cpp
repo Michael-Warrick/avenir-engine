@@ -3,7 +3,6 @@
 #include "FPSController.hpp"
 
 #include <glm/gtc/quaternion.hpp>
-
 #include <avenir/avenir.hpp>
 
 FPSController::FPSController(avenir::Entity &player, avenir::Scene &scene,
