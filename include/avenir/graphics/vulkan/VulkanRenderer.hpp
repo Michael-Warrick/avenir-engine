@@ -228,11 +228,24 @@ private:
 #endif
     };
 
+    /*
+     * Vulkan and glTF models by default handles vertices in a
+     * counter-clockwise winding order, as shown below how our quad is being
+     * rendered.
+     *
+     * Vertices:    UV Coordinates:
+     * 3  2         0,0  1,0
+     * +--+           +--+
+     * | /|           | /|
+     * |/ |           |/ |
+     * +--+           +--+
+     * 0  1         0,1  1,1
+     */
     const std::vector<Vertex> m_vertices = {
-        {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
-        {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-        {{0.5, 0.5}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-        {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}};
+        {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 1.0f}},
+        {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 1.0f}},
+        {{0.5, 0.5}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f}},
+        {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f}}};
 
     const std::vector<uint16_t> m_indices{0, 1, 2, 2, 3, 0};
 };

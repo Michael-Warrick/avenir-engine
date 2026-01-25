@@ -988,6 +988,8 @@ void VulkanRenderer::createTextureImage() {
     int textureHeight;
     int textureChannels;
 
+    // stbi_set_flip_vertically_on_load(true);
+
     stbi_uc *pixels =
         stbi_load("textures/parrot.jpg", &textureWidth, &textureHeight,
                   &textureChannels, STBI_rgb_alpha);

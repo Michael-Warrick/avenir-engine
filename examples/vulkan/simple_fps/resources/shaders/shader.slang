@@ -22,7 +22,7 @@ VSOutput vertMain(VSInput input) {
     VSOutput output;
     output.position = mul(ubo.projection, mul(ubo.view, mul(ubo.model, float4(input.position, 0.0, 1.0))));
     output.color = input.color;
-    output.textureCoordinates = input.textureCoordinates * 2.0f;
+    output.textureCoordinates = input.textureCoordinates;
 
     return output;
 }
