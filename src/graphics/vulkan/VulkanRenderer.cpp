@@ -4,9 +4,10 @@
 #include <cstdint>
 #include <fstream>
 #include <iostream>
-// #include <memory>
 #include <string>
 #include <vector>
+
+#include "avenir/debug/Debug.hpp"
 
 namespace avenir::graphics::vulkan {
 
@@ -35,7 +36,8 @@ VulkanRenderer::VulkanRenderer(GLFWwindow *window) : m_glfwWindow(window) {
     m_isFirstRun = false;
 
     std::cout << "---------------------------------------------------\n";
-    std::cout << "[Vulkan] Successfully initiated, now rendering...\n";
+    Debug::log("[Vulkan] Successfully initiated, now rendering...",
+               Debug::MessageSeverity::eInformation);
 }
 
 VulkanRenderer::~VulkanRenderer() {
@@ -44,7 +46,8 @@ VulkanRenderer::~VulkanRenderer() {
     cleanupSwapchain();
 
     std::cout << "---------------------------------------------------\n";
-    std::cout << "[Vulkan] Shutting down...\n";
+    Debug::log("[Vulkan] Shutting down...",
+               Debug::MessageSeverity::eInformation);
 }
 
 void VulkanRenderer::drawFrame(const glm::mat4 cameraViewMatrix) {
@@ -128,11 +131,14 @@ void VulkanRenderer::onFramebufferResize(int width, int height) {
 }
 
 void VulkanRenderer::printAllAvailableInstanceExtensions() const {
-    std::cout << "[Vulkan] Available instance extensions:\n";
+    Debug::log("[Vulkan] Available instance extensions:",
+               Debug::MessageSeverity::eInformation);
 
     auto extensions = m_context.enumerateInstanceExtensionProperties();
     for (const auto &extension : extensions) {
-        std::cout << "\t\t\t\t" << extension.extensionName << '\n';
+        std::string extensionName =
+            "\t\t" + static_cast<std::string>(extension.extensionName.data());
+        Debug::log(extensionName, Debug::MessageSeverity::eInformation);
     }
 }
 
@@ -611,7 +617,8 @@ void VulkanRenderer::createInstance() {
 
     m_instance = vk::raii::Instance(m_context, instanceCreateInfo);
 
-    std::cout << "[Vulkan] Created: Instance\n";
+    Debug::log("[Vulkan] Created: Instance",
+               Debug::MessageSeverity::eInformation);
 }
 
 void VulkanRenderer::setupDebugMessenger() {
@@ -639,7 +646,8 @@ void VulkanRenderer::setupDebugMessenger() {
 
     m_debugMessenger = m_instance.createDebugUtilsMessengerEXT(createInfo);
 
-    std::cout << "[Vulkan] Created: DebugUtilsMessenger\n";
+    Debug::log("[Vulkan] Created: DebugUtilsMessenger",
+               Debug::MessageSeverity::eInformation);
 }
 
 void VulkanRenderer::createSurface() {
@@ -652,7 +660,8 @@ void VulkanRenderer::createSurface() {
 
     m_surface = vk::raii::SurfaceKHR(m_instance, surface);
 
-    std::cout << "[Vulkan] Created: Surface\n";
+    Debug::log("[Vulkan] Created: Surface",
+               Debug::MessageSeverity::eInformation);
 }
 
 void VulkanRenderer::pickPhysicalDevice() {
@@ -718,7 +727,8 @@ void VulkanRenderer::pickPhysicalDevice() {
             "[Vulkan] Error: Failed to find a suitible GPU!\n");
     }
 
-    std::cout << "[Vulkan] Created: PhysicalDevice\n";
+    Debug::log("[Vulkan] Created: PhysicalDevice",
+               Debug::MessageSeverity::eInformation);
 }
 
 void VulkanRenderer::createLogicalDevice() {
@@ -784,8 +794,10 @@ void VulkanRenderer::createLogicalDevice() {
         vk::raii::Device(m_physicalDevice, logicalDeviceCreateInfo);
     m_queue = vk::raii::Queue(m_logicalDevice, m_queueIndex, 0);
 
-    std::cout << "[Vulkan] Created: Device\n";
-    std::cout << "[Vulkan] Created: Queue (Graphics and Presentation)\n";
+    Debug::log("[Vulkan] Created: Device",
+               Debug::MessageSeverity::eInformation);
+    Debug::log("[Vulkan] Created: Queue (Graphics and Presentation)",
+               Debug::MessageSeverity::eInformation);
 }
 
 void VulkanRenderer::createSwapchain() {
@@ -815,7 +827,8 @@ void VulkanRenderer::createSwapchain() {
     m_swapchainImages = m_swapchain.getImages();
 
     if (m_isFirstRun) {
-        std::cout << "[Vulkan] Created: Swapchain\n";
+        Debug::log("[Vulkan] Created: Swapchain",
+                   Debug::MessageSeverity::eInformation);
     }
 }
 
@@ -836,7 +849,8 @@ void VulkanRenderer::createImageViews() {
     }
 
     if (m_isFirstRun) {
-        std::cout << "[Vulkan] Created: ImageViews\n";
+        Debug::log("[Vulkan] Created: ImageViews",
+                   Debug::MessageSeverity::eInformation);
     }
 }
 
@@ -856,6 +870,9 @@ void VulkanRenderer::createDescriptorSetLayout() {
 
     m_descriptorSetLayout =
         vk::raii::DescriptorSetLayout(m_logicalDevice, layoutInfo);
+
+    Debug::log("[Vulkan] Created: DescriptorSetLayout",
+               Debug::MessageSeverity::eInformation);
 }
 
 void VulkanRenderer::createGraphicsPipeline() {
@@ -938,9 +955,11 @@ void VulkanRenderer::createGraphicsPipeline() {
             .setPSetLayouts(&*m_descriptorSetLayout)
             .setPushConstantRangeCount(0);
 
-    std::cout << "[Vulkan] Created: Pipeline Layout (Graphics)\n";
     m_pipelineLayout =
         vk::raii::PipelineLayout(m_logicalDevice, pipelineLayoutInfo);
+
+    Debug::log("[Vulkan] Created: Pipeline Layout (Graphics)",
+               Debug::MessageSeverity::eInformation);
 
     vk::GraphicsPipelineCreateInfo graphicsPipelineInfo =
         vk::GraphicsPipelineCreateInfo()
@@ -969,7 +988,8 @@ void VulkanRenderer::createGraphicsPipeline() {
         m_logicalDevice, nullptr,
         pipelineCreateInfoChain.get<vk::GraphicsPipelineCreateInfo>());
 
-    std::cout << "[Vulkan] Created: Pipeline (Graphics)\n";
+    Debug::log("[Vulkan] Created: Pipeline (Graphics)",
+               Debug::MessageSeverity::eInformation);
 }
 
 void VulkanRenderer::createCommandPool() {
@@ -980,15 +1000,14 @@ void VulkanRenderer::createCommandPool() {
 
     m_commandPool = vk::raii::CommandPool(m_logicalDevice, poolInfo);
 
-    std::cout << "[Vulkan] Created: Command Pool\n";
+    Debug::log("[Vulkan] Created: Command Pool",
+               Debug::MessageSeverity::eInformation);
 }
 
 void VulkanRenderer::createTextureImage() {
     int textureWidth;
     int textureHeight;
     int textureChannels;
-
-    // stbi_set_flip_vertically_on_load(true);
 
     stbi_uc *pixels =
         stbi_load("textures/parrot.jpg", &textureWidth, &textureHeight,
@@ -1029,14 +1048,16 @@ void VulkanRenderer::createTextureImage() {
     transitionImageLayout(m_textureImage, vk::ImageLayout::eTransferDstOptimal,
                           vk::ImageLayout::eShaderReadOnlyOptimal);
 
-    std::cout << "[Vulkan] Created: Texture Image\n";
+    Debug::log("[Vulkan] Created: Texture Image",
+               Debug::MessageSeverity::eInformation);
 }
 
 void VulkanRenderer::createTextureImageView() {
     m_textureImageView =
         createImageView(m_textureImage, vk::Format::eR8G8B8A8Srgb);
 
-    std::cout << "[Vulkan] Created: Texture Image View\n";
+    Debug::log("[Vulkan] Created: Texture ImageView",
+               Debug::MessageSeverity::eInformation);
 }
 
 void VulkanRenderer::createTextureSampler() {
@@ -1058,7 +1079,8 @@ void VulkanRenderer::createTextureSampler() {
 
     m_textureSampler = vk::raii::Sampler(m_logicalDevice, samplerInfo);
 
-    std::cout << "[Vulkan] Created: Texture Sampler\n";
+    Debug::log("[Vulkan] Created: Texture Sampler",
+               Debug::MessageSeverity::eInformation);
 }
 
 void VulkanRenderer::createVertexBuffer() {
@@ -1145,6 +1167,9 @@ void VulkanRenderer::createDescriptorPool() {
             .setPPoolSizes(poolSize.data());
 
     m_descriptorPool = vk::raii::DescriptorPool(m_logicalDevice, poolInfo);
+
+    Debug::log("[Vulkan] Created: DescriptorPool",
+               Debug::MessageSeverity::eInformation);
 }
 
 void VulkanRenderer::createDescriptorSets() {
@@ -1191,6 +1216,9 @@ void VulkanRenderer::createDescriptorSets() {
 
         m_logicalDevice.updateDescriptorSets(descriptorWrites, {});
     }
+
+    Debug::log("[Vulkan] Created: DescriptorSets",
+               Debug::MessageSeverity::eInformation);
 }
 
 void VulkanRenderer::createCommandBuffers() {
@@ -1208,7 +1236,8 @@ void VulkanRenderer::createCommandBuffers() {
         m_commandBuffers.emplace_back(std::move(commandBuffers[i]));
     }
 
-    std::cout << "[Vulkan] Created: Command Buffers\n";
+    Debug::log("[Vulkan] Created: CommandBuffers",
+               Debug::MessageSeverity::eInformation);
 }
 
 void VulkanRenderer::createSyncObjects() {
@@ -1229,7 +1258,8 @@ void VulkanRenderer::createSyncObjects() {
             vk::FenceCreateInfo(vk::FenceCreateFlagBits::eSignaled), nullptr);
     }
 
-    std::cout << "[Vulkan] Created: Sync Objects\n";
+    Debug::log("[Vulkan] Created: Sync Objects",
+               Debug::MessageSeverity::eInformation);
 }
 
 }  // namespace avenir::graphics::vulkan

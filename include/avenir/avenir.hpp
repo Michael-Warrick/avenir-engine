@@ -9,7 +9,8 @@
 #include "avenir/scene/components/Camera.hpp"
 #include "avenir/scene/components/MeshRenderer.hpp"
 #include "avenir/scene/components/Transform.hpp"
-#include "scene/Scene.hpp"
+#include "avenir/scene/Scene.hpp"
+#include "avenir/debug/Debug.hpp"
 
 namespace avenir {
 

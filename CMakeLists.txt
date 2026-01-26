@@ -23,6 +23,7 @@ add_library(${PROJECT_NAME}
         src/graphics/stb_image_impl.cpp
         src/graphics/vulkan/VulkanRenderer.cpp
 
+        src/debug/Debug.cpp
 )
 
 target_include_directories(${PROJECT_NAME}

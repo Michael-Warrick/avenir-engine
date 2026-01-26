@@ -24,7 +24,6 @@ int main(int argc, char *argv[]) {
     scene.setEntityParent(camera.id(), player.id());
 
     FPSController fpsController(player, scene, inputManager);
-
     while (window.isOpen()) {
         time.tick();
         avenir::Window::pollEvents();
