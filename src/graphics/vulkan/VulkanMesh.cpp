@@ -1,0 +1,1 @@
+#include "avenir/graphics/vulkan/VulkanMesh.hpp"

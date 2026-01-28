@@ -9,20 +9,31 @@ add_subdirectory(vendor/glfw)
 add_subdirectory(vendor/glm)
 
 add_library(${PROJECT_NAME}
+        # Platform
         src/platform/Window.cpp
         src/platform/Time.cpp
+
+        # Input-Output
         src/input/InputManager.cpp
 
+        # Scene
         src/scene/Scene.cpp
         src/scene/Entity.cpp
         src/scene/components/Transform.cpp
         src/scene/components/MeshRenderer.cpp
         src/scene/components/Camera.cpp
 
+        # Graphics (API-agnostic)
         src/graphics/Renderer.cpp
+        src/graphics/Mesh.cpp
         src/graphics/stb_image_impl.cpp
-        src/graphics/vulkan/VulkanRenderer.cpp
 
+        # Vulkan
+        src/graphics/vulkan/VulkanRenderer.cpp
+        src/graphics/vulkan/VulkanInstance.cpp
+        src/graphics/vulkan/VulkanMesh.cpp
+
+        # Debugging/Profiling
         src/debug/Debug.cpp
 )
 

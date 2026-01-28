@@ -18,6 +18,7 @@
 #include "avenir/graphics/stb_image.h"
 
 #include "avenir/graphics/Renderer.hpp"
+#include "avenir/graphics/vulkan/VulkanInstance.hpp"
 
 namespace avenir::graphics::vulkan {
 class VulkanRenderer final : public Renderer {
@@ -30,7 +31,7 @@ public:
 
 private:
     struct Vertex {
-        glm::vec2 position;
+        glm::vec3 position;
         glm::vec3 color;
         glm::vec2 textureCoordinates;
 
@@ -41,7 +42,7 @@ private:
         static std::array<vk::VertexInputAttributeDescription, 3>
         getAttributeDescriptions() {
             return {vk::VertexInputAttributeDescription(
-                        0, 0, vk::Format::eR32G32Sfloat,
+                        0, 0, vk::Format::eR32G32B32Sfloat,
                         offsetof(Vertex, position)),
 
                     vk::VertexInputAttributeDescription(
@@ -59,17 +60,6 @@ private:
         alignas(16) glm::mat4 view;
         alignas(16) glm::mat4 projection;
     };
-
-    void printAllAvailableInstanceExtensions() const;
-
-    [[nodiscard]] std::vector<const char *> findRequiredInstanceLayers() const;
-
-    static std::vector<const char *> findRequiredInstanceExtensions();
-
-    static VKAPI_ATTR vk::Bool32 VKAPI_CALL debugCallback(
-        vk::DebugUtilsMessageSeverityFlagBitsEXT severity,
-        vk::DebugUtilsMessageTypeFlagsEXT type,
-        const vk::DebugUtilsMessengerCallbackDataEXT *pCallbackData, void *);
 
     static uint32_t chooseSwapMinImageCount(
         vk::SurfaceCapabilitiesKHR const &surfaceCapabilities);
@@ -138,8 +128,6 @@ private:
     [[nodiscard]] vk::raii::ImageView createImageView(vk::raii::Image &image,
                                                       vk::Format format);
 
-    void createInstance();
-    void setupDebugMessenger();
     void createSurface();
     void pickPhysicalDevice();
     void createLogicalDevice();
@@ -161,9 +149,7 @@ private:
 
     GLFWwindow *m_glfwWindow = nullptr;
 
-    vk::raii::Context m_context;
-    vk::raii::Instance m_instance = nullptr;
-    vk::raii::DebugUtilsMessengerEXT m_debugMessenger = nullptr;
+    VulkanInstance m_vkInstance;
 
     vk::raii::SurfaceKHR m_surface = nullptr;
     vk::raii::PhysicalDevice m_physicalDevice = nullptr;
@@ -185,7 +171,6 @@ private:
 
     vk::raii::Image m_textureImage = nullptr;
     vk::raii::DeviceMemory m_textureImageMemory = nullptr;
-
     vk::raii::ImageView m_textureImageView = nullptr;
     vk::raii::Sampler m_textureSampler = nullptr;
 
@@ -210,15 +195,6 @@ private:
     bool m_framebufferResized = false;
     bool m_isFirstRun = true;
 
-#ifdef NDEBUG
-    static constexpr bool m_shouldUseValidationLayers = false;
-#else
-    static constexpr bool m_shouldUseValidationLayers = true;
-#endif
-
-    const std::vector<const char *> m_validationLayers = {
-        "VK_LAYER_KHRONOS_validation"};
-
     const std::vector<const char *> m_deviceExtensions = {
         vk::KHRSwapchainExtensionName, vk::KHRSpirv14ExtensionName,
         vk::KHRSynchronization2ExtensionName,
@@ -242,12 +218,34 @@ private:
      * 0  1         0,1  1,1
      */
     const std::vector<Vertex> m_vertices = {
-        {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 1.0f}},
-        {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 1.0f}},
-        {{0.5, 0.5}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f}},
-        {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f}}};
+        // Front face
+        {{-0.5f, -0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
+        {{0.5f, -0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
+        {{0.5f, 0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 0.0f}},
+        {{-0.5f, 0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
 
-    const std::vector<uint16_t> m_indices{0, 1, 2, 2, 3, 0};
+        // Back face
+        {{0.5f, -0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
+        {{-0.5f, -0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
+        {{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 0.0f}},
+        {{0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f}}};
+
+    const std::vector<uint16_t> m_indices = {// Front
+                                             0, 1, 2, 2, 3, 0,
+
+                                             // Back
+                                             4, 5, 6, 6, 7, 4,
+
+                                             // Left
+                                             5, 0, 3, 3, 6, 5,
+
+                                             // Right
+                                             1, 4, 7, 7, 2, 1,
+
+                                             // Top
+                                             3, 2, 7, 7, 6, 3,
+                                             // Bottom
+                                             5, 4, 1, 1, 0, 5};
 };
 }  // namespace avenir::graphics::vulkan
 #endif  // VULKANRENDERER_HPP

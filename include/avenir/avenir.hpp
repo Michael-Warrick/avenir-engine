@@ -11,6 +11,7 @@
 #include "avenir/scene/components/Transform.hpp"
 #include "avenir/scene/Scene.hpp"
 #include "avenir/debug/Debug.hpp"
+#include "avenir/graphics/Mesh.hpp"
 
 namespace avenir {
 
