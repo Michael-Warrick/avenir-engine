@@ -14,8 +14,9 @@ namespace avenir::graphics::vulkan {
 VulkanRenderer::VulkanRenderer(GLFWwindow *window)
     : m_glfwWindow(window),
       m_surface(m_instance.handle(), m_glfwWindow),
-      m_physicalDevice(m_instance.handle(), m_surface.handle()) {
-    createLogicalDevice();
+      m_physicalDevice(m_instance.handle(), m_surface.handle()),
+      m_device(m_surface.handle(), m_physicalDevice.handle(),
+               m_physicalDevice.extensions()) {
     createSwapchain();
     createImageViews();
     createDescriptorSetLayout();
@@ -40,7 +41,7 @@ VulkanRenderer::VulkanRenderer(GLFWwindow *window)
 }
 
 VulkanRenderer::~VulkanRenderer() {
-    m_logicalDevice.waitIdle();
+    m_device.handle().waitIdle();
 
     cleanupSwapchain();
 
@@ -51,8 +52,8 @@ VulkanRenderer::~VulkanRenderer() {
 
 void VulkanRenderer::drawFrame(const glm::mat4 cameraViewMatrix) {
     while (vk::Result::eTimeout ==
-           m_logicalDevice.waitForFences(*m_inFlightFences[m_currentFrame],
-                                         vk::True, UINT64_MAX)) {
+           m_device.handle().waitForFences(*m_inFlightFences[m_currentFrame],
+                                           vk::True, UINT64_MAX)) {
         ;
     }
 
@@ -72,7 +73,7 @@ void VulkanRenderer::drawFrame(const glm::mat4 cameraViewMatrix) {
 
     updateUniformBuffer(m_currentFrame, cameraViewMatrix);
 
-    m_logicalDevice.resetFences(*m_inFlightFences[m_currentFrame]);
+    m_device.handle().resetFences(*m_inFlightFences[m_currentFrame]);
 
     m_commandBuffers[m_currentFrame].reset();
     recordCommandBuffer(imageIndex);
@@ -89,7 +90,7 @@ void VulkanRenderer::drawFrame(const glm::mat4 cameraViewMatrix) {
             .setSignalSemaphoreCount(1)
             .setPSignalSemaphores(&*m_renderFinishedSemaphores[imageIndex]);
 
-    m_queue.submit(submitInfo, *m_inFlightFences[m_currentFrame]);
+    m_device.queue().submit(submitInfo, *m_inFlightFences[m_currentFrame]);
 
     try {
         const vk::PresentInfoKHR presentInfoKHR =
@@ -100,7 +101,7 @@ void VulkanRenderer::drawFrame(const glm::mat4 cameraViewMatrix) {
                 .setPSwapchains(&*m_swapchain)
                 .setPImageIndices(&imageIndex);
 
-        result = m_queue.presentKHR(presentInfoKHR);
+        result = m_device.queue().presentKHR(presentInfoKHR);
         if (result == vk::Result::eErrorOutOfDateKHR ||
             result == vk::Result::eSuboptimalKHR || m_framebufferResized) {
             m_framebufferResized = false;
@@ -190,7 +191,7 @@ vk::raii::ShaderModule VulkanRenderer::createShaderModule(
             .setCodeSize(code.size() * sizeof(char))
             .setPCode(reinterpret_cast<const uint32_t *>(code.data()));
 
-    vk::raii::ShaderModule shaderModule(m_logicalDevice,
+    vk::raii::ShaderModule shaderModule(m_device.handle(),
                                         shaderModuleCreateInfo);
     return shaderModule;
 }
@@ -334,7 +335,7 @@ void VulkanRenderer::cleanupSwapchain() {
 }
 
 void VulkanRenderer::recreateSwapchain() {
-    m_logicalDevice.waitIdle();
+    m_device.handle().waitIdle();
 
     cleanupSwapchain();
     createSwapchain();
@@ -368,7 +369,7 @@ void VulkanRenderer::createBuffer(vk::DeviceSize size,
         vk::BufferCreateInfo().setSize(size).setUsage(usage).setSharingMode(
             vk::SharingMode::eExclusive);
 
-    buffer = vk::raii::Buffer(m_logicalDevice, bufferInfo);
+    buffer = vk::raii::Buffer(m_device.handle(), bufferInfo);
 
     vk::MemoryRequirements memoryRequirements = buffer.getMemoryRequirements();
     vk::MemoryAllocateInfo memoryAllocateInfo =
@@ -377,7 +378,8 @@ void VulkanRenderer::createBuffer(vk::DeviceSize size,
             .setMemoryTypeIndex(
                 findMemoryType(memoryRequirements.memoryTypeBits, properties));
 
-    bufferMemory = vk::raii::DeviceMemory(m_logicalDevice, memoryAllocateInfo);
+    bufferMemory =
+        vk::raii::DeviceMemory(m_device.handle(), memoryAllocateInfo);
     buffer.bindMemory(bufferMemory, 0);
 }
 
@@ -466,7 +468,7 @@ void VulkanRenderer::createImage(const uint32_t width, const uint32_t height,
             .setUsage(usage)
             .setSharingMode(vk::SharingMode::eExclusive);
 
-    image = vk::raii::Image(m_logicalDevice, imageInfo);
+    image = vk::raii::Image(m_device.handle(), imageInfo);
 
     const vk::MemoryRequirements memoryRequirements =
         image.getMemoryRequirements();
@@ -476,7 +478,7 @@ void VulkanRenderer::createImage(const uint32_t width, const uint32_t height,
             .setMemoryTypeIndex(
                 findMemoryType(memoryRequirements.memoryTypeBits, properties));
 
-    imageMemory = vk::raii::DeviceMemory(m_logicalDevice, memoryAllocInfo);
+    imageMemory = vk::raii::DeviceMemory(m_device.handle(), memoryAllocInfo);
     image.bindMemory(imageMemory, 0);
 }
 
@@ -488,7 +490,7 @@ vk::raii::CommandBuffer VulkanRenderer::beginSingleTimeCommands() const {
             .setCommandBufferCount(1);
 
     vk::raii::CommandBuffer commandBuffer =
-        std::move(m_logicalDevice.allocateCommandBuffers(allocInfo).front());
+        std::move(m_device.handle().allocateCommandBuffers(allocInfo).front());
 
     constexpr vk::CommandBufferBeginInfo beginInfo =
         vk::CommandBufferBeginInfo().setFlags(
@@ -506,8 +508,8 @@ void VulkanRenderer::endSingleTimeCommands(
     const vk::SubmitInfo submitInfo =
         vk::SubmitInfo().setCommandBufferCount(1).setPCommandBuffers(
             &*commandBuffer);
-    m_queue.submit(submitInfo, nullptr);
-    m_queue.waitIdle();
+    m_device.queue().submit(submitInfo, nullptr);
+    m_device.queue().waitIdle();
 }
 
 vk::raii::ImageView VulkanRenderer::createImageView(vk::raii::Image &image,
@@ -520,146 +522,7 @@ vk::raii::ImageView VulkanRenderer::createImageView(vk::raii::Image &image,
             .setSubresourceRange(vk::ImageSubresourceRange(
                 vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1));
 
-    return vk::raii::ImageView(m_logicalDevice, viewInfo);
-}
-
-// void VulkanRenderer::pickPhysicalDevice() {
-//     std::vector<vk::raii::PhysicalDevice> physicalDevices =
-//         m_vkInstance.instance().enumeratePhysicalDevices();
-//
-//     const auto physicalDeviceIterator =
-//         std::ranges::find_if(physicalDevices, [&](auto const &physicalDevice)
-//         {
-//             // Check if the physical device supports Vulkan 1.3 or up...
-//             const bool supportsVulkan13 =
-//                 physicalDevice.getProperties().apiVersion >=
-//                 VK_API_VERSION_1_3;
-//
-//             // Check if any of available queue families have support for
-//             // graphics operations
-//             auto queueFamilies = physicalDevice.getQueueFamilyProperties();
-//             bool supportsGraphicsOperations = std::ranges::any_of(
-//                 queueFamilies, [](auto const &queueFamilyProperties) {
-//                     return !!(queueFamilyProperties.queueFlags &
-//                               vk::QueueFlagBits::eGraphics);
-//                 });
-//
-//             // Check all required physical device extensions are available
-//             auto availableExtensions =
-//                 physicalDevice.enumerateDeviceExtensionProperties();
-//             bool supportsAllRequiredExtensions = std::ranges::all_of(
-//                 m_deviceExtensions,
-//                 [&availableExtensions](auto const &requiredExtension) {
-//                     return std::ranges::any_of(
-//                         availableExtensions,
-//                         [requiredExtension](auto const &availableExtension) {
-//                             return strcmp(availableExtension.extensionName,
-//                                           requiredExtension) == 0;
-//                         });
-//                 });
-//
-//             auto features = physicalDevice.template getFeatures2<
-//                 vk::PhysicalDeviceFeatures2,
-//                 vk::PhysicalDeviceVulkan11Features,
-//                 vk::PhysicalDeviceVulkan13Features,
-//                 vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>();
-//
-//             bool supportsRequiredFeatures =
-//                 features.template get<vk::PhysicalDeviceFeatures2>()
-//                     .features.samplerAnisotropy &&
-//                 features.template get<vk::PhysicalDeviceVulkan11Features>()
-//                     .shaderDrawParameters &&
-//                 features.template get<vk::PhysicalDeviceVulkan13Features>()
-//                     .synchronization2 &&
-//                 features.template get<vk::PhysicalDeviceVulkan13Features>()
-//                     .dynamicRendering &&
-//                 features
-//                     .template get<
-//                         vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>()
-//                     .extendedDynamicState;
-//
-//             return supportsVulkan13 && supportsGraphicsOperations &&
-//                    supportsAllRequiredExtensions && supportsRequiredFeatures;
-//         });
-//
-//     if (physicalDeviceIterator != physicalDevices.end()) {
-//         m_physicalDevice = *physicalDeviceIterator;
-//     } else {
-//         throw std::runtime_error(
-//             "[Vulkan] Error: Failed to find a suitable GPU!\n");
-//     }
-//
-//     Debug::log("[Vulkan] Created: PhysicalDevice",
-//                Debug::MessageSeverity::eInformation);
-// }
-
-void VulkanRenderer::createLogicalDevice() {
-    std::vector<vk::QueueFamilyProperties> queueFamilyProperties =
-        m_physicalDevice.handle().getQueueFamilyProperties();
-
-    // Get first index into queueFamilyProperties which supports both graphics
-    // and presentation operations
-    for (uint32_t queueFamilyPropertyIndex = 0;
-         queueFamilyPropertyIndex < queueFamilyProperties.size();
-         queueFamilyPropertyIndex++) {
-        if ((queueFamilyProperties[queueFamilyPropertyIndex].queueFlags &
-             vk::QueueFlagBits::eGraphics) &&
-            m_physicalDevice.handle().getSurfaceSupportKHR(
-                queueFamilyPropertyIndex, *m_surface.handle())) {
-            // Found a queue family that supports both graphics and
-            // presentation!
-            m_queueIndex = queueFamilyPropertyIndex;
-            break;
-        }
-    }
-
-    if (m_queueIndex == ~0) {
-        throw std::runtime_error(
-            "[Vulkan] Error: Couldn't find a queue "
-            "supporting both graphics and presentation!");
-    }
-
-    // Query for Vulkan 1.3+ features
-    vk::StructureChain<vk::PhysicalDeviceFeatures2,
-                       vk::PhysicalDeviceVulkan11Features,
-                       vk::PhysicalDeviceVulkan13Features,
-                       vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>
-        featureChain(
-            vk::PhysicalDeviceFeatures2{}.features = {{.samplerAnisotropy =
-                                                           vk::True}},
-            vk::PhysicalDeviceVulkan11Features{}.setShaderDrawParameters(
-                vk::True),
-            vk::PhysicalDeviceVulkan13Features{}
-                .setDynamicRendering(vk::True)
-                .setSynchronization2(vk::True),
-            vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT{}
-                .setExtendedDynamicState(vk::True));
-
-    // Create a logical device
-    float queuePriority = 1.0f;
-    vk::DeviceQueueCreateInfo deviceQueueCreateInfo =
-        vk::DeviceQueueCreateInfo()
-            .setQueueFamilyIndex(m_queueIndex)
-            .setQueueCount(1)
-            .setPQueuePriorities(&queuePriority);
-
-    vk::DeviceCreateInfo logicalDeviceCreateInfo =
-        vk::DeviceCreateInfo()
-            .setPNext(&featureChain.get<vk::PhysicalDeviceFeatures2>())
-            .setQueueCreateInfoCount(1)
-            .setPQueueCreateInfos(&deviceQueueCreateInfo)
-            .setEnabledExtensionCount(
-                static_cast<uint32_t>(m_physicalDevice.extensions().size()))
-            .setPpEnabledExtensionNames(m_physicalDevice.extensions().data());
-
-    m_logicalDevice =
-        vk::raii::Device(m_physicalDevice.handle(), logicalDeviceCreateInfo);
-    m_queue = vk::raii::Queue(m_logicalDevice, m_queueIndex, 0);
-
-    Debug::log("[Vulkan] Created: Device",
-               Debug::MessageSeverity::eInformation);
-    Debug::log("[Vulkan] Created: Queue (Graphics and Presentation)",
-               Debug::MessageSeverity::eInformation);
+    return vk::raii::ImageView(m_device.handle(), viewInfo);
 }
 
 void VulkanRenderer::createSwapchain() {
@@ -687,7 +550,8 @@ void VulkanRenderer::createSwapchain() {
                     *m_surface.handle())))
             .setClipped(vk::True);
 
-    m_swapchain = vk::raii::SwapchainKHR(m_logicalDevice, swapchainCreateinfo);
+    m_swapchain =
+        vk::raii::SwapchainKHR(m_device.handle(), swapchainCreateinfo);
     m_swapchainImages = m_swapchain.getImages();
 
     if (m_isFirstRun) {
@@ -708,7 +572,7 @@ void VulkanRenderer::createImageViews() {
 
     for (const auto image : m_swapchainImages) {
         imageViewCreateInfo.setImage(image);
-        m_swapchainImageViews.emplace_back(m_logicalDevice,
+        m_swapchainImageViews.emplace_back(m_device.handle(),
                                            imageViewCreateInfo);
     }
 
@@ -733,7 +597,7 @@ void VulkanRenderer::createDescriptorSetLayout() {
             .setPBindings(bindings.data());
 
     m_descriptorSetLayout =
-        vk::raii::DescriptorSetLayout(m_logicalDevice, layoutInfo);
+        vk::raii::DescriptorSetLayout(m_device.handle(), layoutInfo);
 
     Debug::log("[Vulkan] Created: DescriptorSetLayout",
                Debug::MessageSeverity::eInformation);
@@ -820,7 +684,7 @@ void VulkanRenderer::createGraphicsPipeline() {
             .setPushConstantRangeCount(0);
 
     m_pipelineLayout =
-        vk::raii::PipelineLayout(m_logicalDevice, pipelineLayoutInfo);
+        vk::raii::PipelineLayout(m_device.handle(), pipelineLayoutInfo);
 
     Debug::log("[Vulkan] Created: Pipeline Layout (Graphics)",
                Debug::MessageSeverity::eInformation);
@@ -849,7 +713,7 @@ void VulkanRenderer::createGraphicsPipeline() {
         pipelineCreateInfoChain(graphicsPipelineInfo, pipelineRenderingInfo);
 
     m_graphicsPipeline = vk::raii::Pipeline(
-        m_logicalDevice, nullptr,
+        m_device.handle(), nullptr,
         pipelineCreateInfoChain.get<vk::GraphicsPipelineCreateInfo>());
 
     Debug::log("[Vulkan] Created: Pipeline (Graphics)",
@@ -860,9 +724,9 @@ void VulkanRenderer::createCommandPool() {
     vk::CommandPoolCreateInfo poolInfo =
         vk::CommandPoolCreateInfo()
             .setFlags(vk::CommandPoolCreateFlagBits::eResetCommandBuffer)
-            .setQueueFamilyIndex(m_queueIndex);
+            .setQueueFamilyIndex(m_device.queueIndex());
 
-    m_commandPool = vk::raii::CommandPool(m_logicalDevice, poolInfo);
+    m_commandPool = vk::raii::CommandPool(m_device.handle(), poolInfo);
 
     Debug::log("[Vulkan] Created: Command Pool",
                Debug::MessageSeverity::eInformation);
@@ -942,7 +806,7 @@ void VulkanRenderer::createTextureSampler() {
             .setCompareEnable(vk::False)
             .setCompareOp(vk::CompareOp::eAlways);
 
-    m_textureSampler = vk::raii::Sampler(m_logicalDevice, samplerInfo);
+    m_textureSampler = vk::raii::Sampler(m_device.handle(), samplerInfo);
 
     Debug::log("[Vulkan] Created: Texture Sampler",
                Debug::MessageSeverity::eInformation);
@@ -1031,7 +895,7 @@ void VulkanRenderer::createDescriptorPool() {
             .setPoolSizeCount(poolSize.size())
             .setPPoolSizes(poolSize.data());
 
-    m_descriptorPool = vk::raii::DescriptorPool(m_logicalDevice, poolInfo);
+    m_descriptorPool = vk::raii::DescriptorPool(m_device.handle(), poolInfo);
 
     Debug::log("[Vulkan] Created: DescriptorPool",
                Debug::MessageSeverity::eInformation);
@@ -1047,7 +911,7 @@ void VulkanRenderer::createDescriptorSets() {
             .setPSetLayouts(layouts.data());
 
     m_descriptorSets.clear();
-    m_descriptorSets = m_logicalDevice.allocateDescriptorSets(allocInfo);
+    m_descriptorSets = m_device.handle().allocateDescriptorSets(allocInfo);
 
     for (size_t i = 0; i < m_kFramesInFlight; ++i) {
         vk::DescriptorBufferInfo bufferInfo =
@@ -1079,7 +943,7 @@ void VulkanRenderer::createDescriptorSets() {
                 .setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
                 .setPImageInfo(&imageInfo)};
 
-        m_logicalDevice.updateDescriptorSets(descriptorWrites, {});
+        m_device.handle().updateDescriptorSets(descriptorWrites, {});
     }
 
     Debug::log("[Vulkan] Created: DescriptorSets",
@@ -1093,7 +957,7 @@ void VulkanRenderer::createCommandBuffers() {
             .setLevel(vk::CommandBufferLevel::ePrimary)
             .setCommandBufferCount(m_kFramesInFlight);
 
-    vk::raii::CommandBuffers commandBuffers(m_logicalDevice, allocInfo);
+    vk::raii::CommandBuffers commandBuffers(m_device.handle(), allocInfo);
 
     m_commandBuffers.clear();
     m_commandBuffers.reserve(m_kFramesInFlight);
@@ -1111,15 +975,15 @@ void VulkanRenderer::createSyncObjects() {
     m_inFlightFences.clear();
 
     for (uint32_t i = 0; i < m_swapchainImages.size(); ++i) {
-        m_presentCompleteSemaphores.emplace_back(m_logicalDevice,
+        m_presentCompleteSemaphores.emplace_back(m_device.handle(),
                                                  vk::SemaphoreCreateInfo());
-        m_renderFinishedSemaphores.emplace_back(m_logicalDevice,
+        m_renderFinishedSemaphores.emplace_back(m_device.handle(),
                                                 vk::SemaphoreCreateInfo());
     }
 
     for (uint32_t i = 0; i < m_kFramesInFlight; ++i) {
         m_inFlightFences.emplace_back(
-            m_logicalDevice,
+            m_device.handle(),
             vk::FenceCreateInfo(vk::FenceCreateFlagBits::eSignaled), nullptr);
     }
 
