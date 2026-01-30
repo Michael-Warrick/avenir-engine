@@ -32,6 +32,7 @@ add_library(${PROJECT_NAME}
         src/graphics/vulkan/VulkanRenderer.cpp
         src/graphics/vulkan/VulkanInstance.cpp
         src/graphics/vulkan/VulkanSurface.cpp
+        src/graphics/vulkan/VulkanPhysicalDevice.cpp
         src/graphics/vulkan/VulkanMesh.cpp
 
         # Debugging/Profiling

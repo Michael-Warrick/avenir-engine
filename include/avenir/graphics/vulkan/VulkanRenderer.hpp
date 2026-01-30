@@ -20,6 +20,7 @@
 #include "avenir/graphics/Renderer.hpp"
 #include "avenir/graphics/vulkan/VulkanInstance.hpp"
 #include "avenir/graphics/vulkan/VulkanSurface.hpp"
+#include "avenir/graphics/vulkan/VulkanPhysicalDevice.hpp"
 
 namespace avenir::graphics::vulkan {
 class VulkanRenderer final : public Renderer {
@@ -113,7 +114,6 @@ private:
     void updateUniformBuffer(uint32_t currentImage,
                              const glm::mat4 &viewMatrix) const;
 
-    // std::filesystem::path getResourcePath(const std::string& relativePath);
     static std::vector<char> readFile(const std::string &fileName);
 
     void createImage(uint32_t width, uint32_t height, vk::Format format,
@@ -129,7 +129,6 @@ private:
     [[nodiscard]] vk::raii::ImageView createImageView(vk::raii::Image &image,
                                                       vk::Format format);
 
-    void pickPhysicalDevice();
     void createLogicalDevice();
     void createSwapchain();
     void createImageViews();
@@ -149,10 +148,10 @@ private:
 
     GLFWwindow *m_glfwWindow = nullptr;
 
-    VulkanInstance m_vkInstance;
-    VulkanSurface m_vkSurface;
+    VulkanInstance m_instance;
+    VulkanSurface m_surface;
+    VulkanPhysicalDevice m_physicalDevice;
 
-    vk::raii::PhysicalDevice m_physicalDevice = nullptr;
     vk::raii::Device m_logicalDevice = nullptr;
 
     vk::raii::Queue m_queue = nullptr;
@@ -194,15 +193,6 @@ private:
     static constexpr uint32_t m_kFramesInFlight = 2;
     bool m_framebufferResized = false;
     bool m_isFirstRun = true;
-
-    const std::vector<const char *> m_deviceExtensions = {
-        vk::KHRSwapchainExtensionName, vk::KHRSpirv14ExtensionName,
-        vk::KHRSynchronization2ExtensionName,
-        vk::KHRCreateRenderpass2ExtensionName,
-#if defined(__APPLE__)
-        "VK_KHR_portability_subset"
-#endif
-    };
 
     /*
      * Vulkan and glTF models by default handles vertices in a

@@ -18,7 +18,7 @@ public:
     VulkanSurface(const vk::raii::Instance &instance, GLFWwindow *window);
     ~VulkanSurface() = default;
 
-    [[nodiscard]] const vk::raii::SurfaceKHR &surface() const;
+    [[nodiscard]] const vk::raii::SurfaceKHR &handle() const;
 
 private:
     void createSurface();

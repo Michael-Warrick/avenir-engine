@@ -10,7 +10,7 @@ VulkanSurface::VulkanSurface(const vk::raii::Instance &instance,
     createSurface();
 }
 
-const vk::raii::SurfaceKHR &VulkanSurface::surface() const { return m_surface; }
+const vk::raii::SurfaceKHR &VulkanSurface::handle() const { return m_surface; }
 
 void VulkanSurface::createSurface() {
     VkSurfaceKHR surface;

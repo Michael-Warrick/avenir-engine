@@ -12,7 +12,7 @@ VulkanInstance::VulkanInstance() {
     setupDebugMessenger();
 }
 
-const vk::raii::Instance &VulkanInstance::instance() const {
+const vk::raii::Instance &VulkanInstance::handle() const {
     return m_instance;
 }
 

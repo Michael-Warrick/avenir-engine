@@ -10,7 +10,7 @@ public:
     VulkanInstance();
     ~VulkanInstance() = default;
 
-    [[nodiscard]] const vk::raii::Instance &instance() const;
+    [[nodiscard]] const vk::raii::Instance &handle() const;
 
 private:
     void printAllAvailableInstanceExtensions() const;

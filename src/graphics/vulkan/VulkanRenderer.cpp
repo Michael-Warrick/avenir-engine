@@ -12,8 +12,9 @@
 namespace avenir::graphics::vulkan {
 
 VulkanRenderer::VulkanRenderer(GLFWwindow *window)
-    : m_glfwWindow(window), m_vkSurface(m_vkInstance.instance(), m_glfwWindow) {
-    pickPhysicalDevice();
+    : m_glfwWindow(window),
+      m_surface(m_instance.handle(), m_glfwWindow),
+      m_physicalDevice(m_instance.handle(), m_surface.handle()) {
     createLogicalDevice();
     createSwapchain();
     createImageViews();
@@ -343,7 +344,7 @@ void VulkanRenderer::recreateSwapchain() {
 uint32_t VulkanRenderer::findMemoryType(uint32_t typeFilter,
                                         vk::MemoryPropertyFlags properties) {
     vk::PhysicalDeviceMemoryProperties memoryProperties =
-        m_physicalDevice.getMemoryProperties();
+        m_physicalDevice.handle().getMemoryProperties();
     for (uint32_t i = 0; i < memoryProperties.memoryTypeCount; ++i) {
         // If there is a memory type suitable for the buffer that also has all
         // the properties we need, then we return its index
@@ -522,76 +523,79 @@ vk::raii::ImageView VulkanRenderer::createImageView(vk::raii::Image &image,
     return vk::raii::ImageView(m_logicalDevice, viewInfo);
 }
 
-void VulkanRenderer::pickPhysicalDevice() {
-    std::vector<vk::raii::PhysicalDevice> physicalDevices =
-        m_vkInstance.instance().enumeratePhysicalDevices();
-
-    const auto physicalDeviceIterator =
-        std::ranges::find_if(physicalDevices, [&](auto const &physicalDevice) {
-            // Check if the physical device supports Vulkan 1.3 or up...
-            const bool supportsVulkan13 =
-                physicalDevice.getProperties().apiVersion >= VK_API_VERSION_1_3;
-
-            // Check if any of available queue families have support for
-            // graphics operations
-            auto queueFamilies = physicalDevice.getQueueFamilyProperties();
-            bool supportsGraphicsOperations = std::ranges::any_of(
-                queueFamilies, [](auto const &queueFamilyProperties) {
-                    return !!(queueFamilyProperties.queueFlags &
-                              vk::QueueFlagBits::eGraphics);
-                });
-
-            // Check all required physical device extensions are available
-            auto availableExtensions =
-                physicalDevice.enumerateDeviceExtensionProperties();
-            bool supportsAllRequiredExtensions = std::ranges::all_of(
-                m_deviceExtensions,
-                [&availableExtensions](auto const &requiredExtension) {
-                    return std::ranges::any_of(
-                        availableExtensions,
-                        [requiredExtension](auto const &availableExtension) {
-                            return strcmp(availableExtension.extensionName,
-                                          requiredExtension) == 0;
-                        });
-                });
-
-            auto features = physicalDevice.template getFeatures2<
-                vk::PhysicalDeviceFeatures2, vk::PhysicalDeviceVulkan11Features,
-                vk::PhysicalDeviceVulkan13Features,
-                vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>();
-
-            bool supportsRequiredFeatures =
-                features.template get<vk::PhysicalDeviceFeatures2>()
-                    .features.samplerAnisotropy &&
-                features.template get<vk::PhysicalDeviceVulkan11Features>()
-                    .shaderDrawParameters &&
-                features.template get<vk::PhysicalDeviceVulkan13Features>()
-                    .synchronization2 &&
-                features.template get<vk::PhysicalDeviceVulkan13Features>()
-                    .dynamicRendering &&
-                features
-                    .template get<
-                        vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>()
-                    .extendedDynamicState;
-
-            return supportsVulkan13 && supportsGraphicsOperations &&
-                   supportsAllRequiredExtensions && supportsRequiredFeatures;
-        });
-
-    if (physicalDeviceIterator != physicalDevices.end()) {
-        m_physicalDevice = *physicalDeviceIterator;
-    } else {
-        throw std::runtime_error(
-            "[Vulkan] Error: Failed to find a suitible GPU!\n");
-    }
-
-    Debug::log("[Vulkan] Created: PhysicalDevice",
-               Debug::MessageSeverity::eInformation);
-}
+// void VulkanRenderer::pickPhysicalDevice() {
+//     std::vector<vk::raii::PhysicalDevice> physicalDevices =
+//         m_vkInstance.instance().enumeratePhysicalDevices();
+//
+//     const auto physicalDeviceIterator =
+//         std::ranges::find_if(physicalDevices, [&](auto const &physicalDevice)
+//         {
+//             // Check if the physical device supports Vulkan 1.3 or up...
+//             const bool supportsVulkan13 =
+//                 physicalDevice.getProperties().apiVersion >=
+//                 VK_API_VERSION_1_3;
+//
+//             // Check if any of available queue families have support for
+//             // graphics operations
+//             auto queueFamilies = physicalDevice.getQueueFamilyProperties();
+//             bool supportsGraphicsOperations = std::ranges::any_of(
+//                 queueFamilies, [](auto const &queueFamilyProperties) {
+//                     return !!(queueFamilyProperties.queueFlags &
+//                               vk::QueueFlagBits::eGraphics);
+//                 });
+//
+//             // Check all required physical device extensions are available
+//             auto availableExtensions =
+//                 physicalDevice.enumerateDeviceExtensionProperties();
+//             bool supportsAllRequiredExtensions = std::ranges::all_of(
+//                 m_deviceExtensions,
+//                 [&availableExtensions](auto const &requiredExtension) {
+//                     return std::ranges::any_of(
+//                         availableExtensions,
+//                         [requiredExtension](auto const &availableExtension) {
+//                             return strcmp(availableExtension.extensionName,
+//                                           requiredExtension) == 0;
+//                         });
+//                 });
+//
+//             auto features = physicalDevice.template getFeatures2<
+//                 vk::PhysicalDeviceFeatures2,
+//                 vk::PhysicalDeviceVulkan11Features,
+//                 vk::PhysicalDeviceVulkan13Features,
+//                 vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>();
+//
+//             bool supportsRequiredFeatures =
+//                 features.template get<vk::PhysicalDeviceFeatures2>()
+//                     .features.samplerAnisotropy &&
+//                 features.template get<vk::PhysicalDeviceVulkan11Features>()
+//                     .shaderDrawParameters &&
+//                 features.template get<vk::PhysicalDeviceVulkan13Features>()
+//                     .synchronization2 &&
+//                 features.template get<vk::PhysicalDeviceVulkan13Features>()
+//                     .dynamicRendering &&
+//                 features
+//                     .template get<
+//                         vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>()
+//                     .extendedDynamicState;
+//
+//             return supportsVulkan13 && supportsGraphicsOperations &&
+//                    supportsAllRequiredExtensions && supportsRequiredFeatures;
+//         });
+//
+//     if (physicalDeviceIterator != physicalDevices.end()) {
+//         m_physicalDevice = *physicalDeviceIterator;
+//     } else {
+//         throw std::runtime_error(
+//             "[Vulkan] Error: Failed to find a suitable GPU!\n");
+//     }
+//
+//     Debug::log("[Vulkan] Created: PhysicalDevice",
+//                Debug::MessageSeverity::eInformation);
+// }
 
 void VulkanRenderer::createLogicalDevice() {
     std::vector<vk::QueueFamilyProperties> queueFamilyProperties =
-        m_physicalDevice.getQueueFamilyProperties();
+        m_physicalDevice.handle().getQueueFamilyProperties();
 
     // Get first index into queueFamilyProperties which supports both graphics
     // and presentation operations
@@ -600,8 +604,8 @@ void VulkanRenderer::createLogicalDevice() {
          queueFamilyPropertyIndex++) {
         if ((queueFamilyProperties[queueFamilyPropertyIndex].queueFlags &
              vk::QueueFlagBits::eGraphics) &&
-            m_physicalDevice.getSurfaceSupportKHR(queueFamilyPropertyIndex,
-                                                  *m_vkSurface.surface())) {
+            m_physicalDevice.handle().getSurfaceSupportKHR(
+                queueFamilyPropertyIndex, *m_surface.handle())) {
             // Found a queue family that supports both graphics and
             // presentation!
             m_queueIndex = queueFamilyPropertyIndex;
@@ -645,11 +649,11 @@ void VulkanRenderer::createLogicalDevice() {
             .setQueueCreateInfoCount(1)
             .setPQueueCreateInfos(&deviceQueueCreateInfo)
             .setEnabledExtensionCount(
-                static_cast<uint32_t>(m_deviceExtensions.size()))
-            .setPpEnabledExtensionNames(m_deviceExtensions.data());
+                static_cast<uint32_t>(m_physicalDevice.extensions().size()))
+            .setPpEnabledExtensionNames(m_physicalDevice.extensions().data());
 
     m_logicalDevice =
-        vk::raii::Device(m_physicalDevice, logicalDeviceCreateInfo);
+        vk::raii::Device(m_physicalDevice.handle(), logicalDeviceCreateInfo);
     m_queue = vk::raii::Queue(m_logicalDevice, m_queueIndex, 0);
 
     Debug::log("[Vulkan] Created: Device",
@@ -660,14 +664,15 @@ void VulkanRenderer::createLogicalDevice() {
 
 void VulkanRenderer::createSwapchain() {
     auto surfaceCapabilities =
-        m_physicalDevice.getSurfaceCapabilitiesKHR(*m_vkSurface.surface());
+        m_physicalDevice.handle().getSurfaceCapabilitiesKHR(
+            *m_surface.handle());
     m_swapchainExtent = chooseSwapExtent(surfaceCapabilities);
     m_swapchainSurfaceFormat = chooseSwapSurfaceFormat(
-        m_physicalDevice.getSurfaceFormatsKHR(*m_vkSurface.surface()));
+        m_physicalDevice.handle().getSurfaceFormatsKHR(*m_surface.handle()));
 
     vk::SwapchainCreateInfoKHR swapchainCreateinfo =
         vk::SwapchainCreateInfoKHR()
-            .setSurface(*m_vkSurface.surface())
+            .setSurface(*m_surface.handle())
             .setMinImageCount(chooseSwapMinImageCount(surfaceCapabilities))
             .setImageFormat(m_swapchainSurfaceFormat.format)
             .setImageColorSpace(m_swapchainSurfaceFormat.colorSpace)
@@ -678,8 +683,8 @@ void VulkanRenderer::createSwapchain() {
             .setPreTransform(surfaceCapabilities.currentTransform)
             .setCompositeAlpha(vk::CompositeAlphaFlagBitsKHR::eOpaque)
             .setPresentMode(chooseSwapPresentMode(
-                m_physicalDevice.getSurfacePresentModesKHR(
-                    *m_vkSurface.surface())))
+                m_physicalDevice.handle().getSurfacePresentModesKHR(
+                    *m_surface.handle())))
             .setClipped(vk::True);
 
     m_swapchain = vk::raii::SwapchainKHR(m_logicalDevice, swapchainCreateinfo);
@@ -920,7 +925,8 @@ void VulkanRenderer::createTextureImageView() {
 }
 
 void VulkanRenderer::createTextureSampler() {
-    vk::PhysicalDeviceProperties properties = m_physicalDevice.getProperties();
+    vk::PhysicalDeviceProperties properties =
+        m_physicalDevice.handle().getProperties();
 
     vk::SamplerCreateInfo samplerInfo =
         vk::SamplerCreateInfo()
