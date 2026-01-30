@@ -11,8 +11,8 @@
 
 namespace avenir::graphics::vulkan {
 
-VulkanRenderer::VulkanRenderer(GLFWwindow *window) : m_glfwWindow(window) {
-    createSurface();
+VulkanRenderer::VulkanRenderer(GLFWwindow *window)
+    : m_glfwWindow(window), m_vkSurface(m_vkInstance.instance(), m_glfwWindow) {
     pickPhysicalDevice();
     createLogicalDevice();
     createSwapchain();
@@ -522,20 +522,6 @@ vk::raii::ImageView VulkanRenderer::createImageView(vk::raii::Image &image,
     return vk::raii::ImageView(m_logicalDevice, viewInfo);
 }
 
-void VulkanRenderer::createSurface() {
-    VkSurfaceKHR surface;
-    if (glfwCreateWindowSurface(*m_vkInstance.instance(), m_glfwWindow, nullptr,
-                                &surface) != VK_SUCCESS) {
-        throw std::runtime_error(
-            "[Vulkan] Error: Failed to create window surface!");
-    }
-
-    m_surface = vk::raii::SurfaceKHR(m_vkInstance.instance(), surface);
-
-    Debug::log("[Vulkan] Created: Surface",
-               Debug::MessageSeverity::eInformation);
-}
-
 void VulkanRenderer::pickPhysicalDevice() {
     std::vector<vk::raii::PhysicalDevice> physicalDevices =
         m_vkInstance.instance().enumeratePhysicalDevices();
@@ -615,7 +601,7 @@ void VulkanRenderer::createLogicalDevice() {
         if ((queueFamilyProperties[queueFamilyPropertyIndex].queueFlags &
              vk::QueueFlagBits::eGraphics) &&
             m_physicalDevice.getSurfaceSupportKHR(queueFamilyPropertyIndex,
-                                                  *m_surface)) {
+                                                  *m_vkSurface.surface())) {
             // Found a queue family that supports both graphics and
             // presentation!
             m_queueIndex = queueFamilyPropertyIndex;
@@ -674,14 +660,14 @@ void VulkanRenderer::createLogicalDevice() {
 
 void VulkanRenderer::createSwapchain() {
     auto surfaceCapabilities =
-        m_physicalDevice.getSurfaceCapabilitiesKHR(*m_surface);
+        m_physicalDevice.getSurfaceCapabilitiesKHR(*m_vkSurface.surface());
     m_swapchainExtent = chooseSwapExtent(surfaceCapabilities);
     m_swapchainSurfaceFormat = chooseSwapSurfaceFormat(
-        m_physicalDevice.getSurfaceFormatsKHR(*m_surface));
+        m_physicalDevice.getSurfaceFormatsKHR(*m_vkSurface.surface()));
 
     vk::SwapchainCreateInfoKHR swapchainCreateinfo =
         vk::SwapchainCreateInfoKHR()
-            .setSurface(*m_surface)
+            .setSurface(*m_vkSurface.surface())
             .setMinImageCount(chooseSwapMinImageCount(surfaceCapabilities))
             .setImageFormat(m_swapchainSurfaceFormat.format)
             .setImageColorSpace(m_swapchainSurfaceFormat.colorSpace)
@@ -692,7 +678,8 @@ void VulkanRenderer::createSwapchain() {
             .setPreTransform(surfaceCapabilities.currentTransform)
             .setCompositeAlpha(vk::CompositeAlphaFlagBitsKHR::eOpaque)
             .setPresentMode(chooseSwapPresentMode(
-                m_physicalDevice.getSurfacePresentModesKHR(*m_surface)))
+                m_physicalDevice.getSurfacePresentModesKHR(
+                    *m_vkSurface.surface())))
             .setClipped(vk::True);
 
     m_swapchain = vk::raii::SwapchainKHR(m_logicalDevice, swapchainCreateinfo);

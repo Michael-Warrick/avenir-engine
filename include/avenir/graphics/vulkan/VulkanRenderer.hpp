@@ -19,6 +19,7 @@
 
 #include "avenir/graphics/Renderer.hpp"
 #include "avenir/graphics/vulkan/VulkanInstance.hpp"
+#include "avenir/graphics/vulkan/VulkanSurface.hpp"
 
 namespace avenir::graphics::vulkan {
 class VulkanRenderer final : public Renderer {
@@ -128,7 +129,6 @@ private:
     [[nodiscard]] vk::raii::ImageView createImageView(vk::raii::Image &image,
                                                       vk::Format format);
 
-    void createSurface();
     void pickPhysicalDevice();
     void createLogicalDevice();
     void createSwapchain();
@@ -150,8 +150,8 @@ private:
     GLFWwindow *m_glfwWindow = nullptr;
 
     VulkanInstance m_vkInstance;
+    VulkanSurface m_vkSurface;
 
-    vk::raii::SurfaceKHR m_surface = nullptr;
     vk::raii::PhysicalDevice m_physicalDevice = nullptr;
     vk::raii::Device m_logicalDevice = nullptr;
 
