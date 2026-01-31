@@ -12,6 +12,7 @@
 #include <GLFW/glfw3.h>
 
 #define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -70,12 +71,13 @@ private:
 
     void recordCommandBuffer(uint32_t imageIndex) const;
 
-    void transitionImageLayout(
-        uint32_t imageIndex, vk::ImageLayout oldLayout,
-        vk::ImageLayout newLayout, vk::AccessFlags2 sourceAccessMask,
-        vk::AccessFlags2 destinationAccessMask,
-        vk::PipelineStageFlags2 sourceStageMask,
-        vk::PipelineStageFlags2 destinationStageMask) const;
+    void transitionImageLayout(vk::Image image, vk::ImageLayout oldLayout,
+                               vk::ImageLayout newLayout,
+                               vk::AccessFlags2 sourceAccessMask,
+                               vk::AccessFlags2 destinationAccessMask,
+                               vk::PipelineStageFlags2 sourceStageMask,
+                               vk::PipelineStageFlags2 destinationStageMask,
+                               vk::ImageAspectFlags aspectFlags) const;
 
     void transitionImageLayout(const vk::raii::Image &image,
                                vk::ImageLayout oldLayout,
@@ -113,11 +115,21 @@ private:
         const vk::raii::CommandBuffer &commandBuffer) const;
 
     [[nodiscard]] vk::raii::ImageView createImageView(
-        const vk::raii::Image &image, vk::Format format) const;
+        const vk::raii::Image &image, vk::Format format,
+        vk::ImageAspectFlags aspectFlags) const;
+
+    [[nodiscard]] vk::Format findSupportedFormat(
+        const std::vector<vk::Format> &candidates, vk::ImageTiling tiling,
+        vk::FormatFeatureFlags features);
+
+    [[nodiscard]] vk::Format findDepthFormat();
+
+    [[nodiscard]] static bool hasStencilComponent(vk::Format format);
 
     void createDescriptorSetLayout();
     void createGraphicsPipeline();
     void createCommandPool();
+    void createDepthResources();
     void createTextureImage();
     void createTextureImageView();
     void createTextureSampler();
@@ -146,6 +158,10 @@ private:
     vk::raii::DeviceMemory m_textureImageMemory = nullptr;
     vk::raii::ImageView m_textureImageView = nullptr;
     vk::raii::Sampler m_textureSampler = nullptr;
+
+    vk::raii::Image m_depthImage = nullptr;
+    vk::raii::DeviceMemory m_depthImageMemory = nullptr;
+    vk::raii::ImageView m_depthImageView = nullptr;
 
     vk::raii::Buffer m_vertexBuffer = nullptr;
     vk::raii::DeviceMemory m_vertexBufferMemory = nullptr;
