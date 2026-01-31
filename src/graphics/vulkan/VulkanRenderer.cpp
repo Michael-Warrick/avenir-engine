@@ -16,9 +16,9 @@ VulkanRenderer::VulkanRenderer(GLFWwindow *window)
       m_surface(m_instance.handle(), m_glfwWindow),
       m_physicalDevice(m_instance.handle(), m_surface.handle()),
       m_device(m_surface.handle(), m_physicalDevice.handle(),
-               m_physicalDevice.extensions()) {
-    createSwapchain();
-    createImageViews();
+               m_physicalDevice.extensions()),
+      m_swapchain(m_glfwWindow, m_surface.handle(), m_physicalDevice.handle(),
+                  m_device.handle()) {
     createDescriptorSetLayout();
     createGraphicsPipeline();
     createCommandPool();
@@ -43,8 +43,6 @@ VulkanRenderer::VulkanRenderer(GLFWwindow *window)
 VulkanRenderer::~VulkanRenderer() {
     m_device.handle().waitIdle();
 
-    cleanupSwapchain();
-
     std::cout << "---------------------------------------------------\n";
     Debug::log("[Vulkan] Shutting down...",
                Debug::MessageSeverity::eInformation);
@@ -57,11 +55,11 @@ void VulkanRenderer::drawFrame(const glm::mat4 cameraViewMatrix) {
         ;
     }
 
-    auto [result, imageIndex] = m_swapchain.acquireNextImage(
+    auto [result, imageIndex] = m_swapchain.handle().acquireNextImage(
         UINT64_MAX, *m_presentCompleteSemaphores[m_semaphoreIndex], nullptr);
 
     if (result == vk::Result::eErrorOutOfDateKHR) {
-        recreateSwapchain();
+        m_swapchain.recreate();
         return;
     }
 
@@ -98,14 +96,14 @@ void VulkanRenderer::drawFrame(const glm::mat4 cameraViewMatrix) {
                 .setWaitSemaphoreCount(1)
                 .setPWaitSemaphores(&*m_renderFinishedSemaphores[imageIndex])
                 .setSwapchainCount(1)
-                .setPSwapchains(&*m_swapchain)
+                .setPSwapchains(&*m_swapchain.handle())
                 .setPImageIndices(&imageIndex);
 
         result = m_device.queue().presentKHR(presentInfoKHR);
         if (result == vk::Result::eErrorOutOfDateKHR ||
             result == vk::Result::eSuboptimalKHR || m_framebufferResized) {
             m_framebufferResized = false;
-            recreateSwapchain();
+            m_swapchain.recreate();
         } else if (result != vk::Result::eSuccess) {
             throw std::runtime_error(
                 "[Vulkan] Error: Failed to present swapchain image!\n");
@@ -114,7 +112,7 @@ void VulkanRenderer::drawFrame(const glm::mat4 cameraViewMatrix) {
     } catch (const vk::SystemError &e) {
         if (e.code().value() ==
             static_cast<int>(vk::Result::eErrorOutOfDateKHR)) {
-            recreateSwapchain();
+            m_swapchain.recreate();
             return;
         } else {
             throw;
@@ -128,60 +126,6 @@ void VulkanRenderer::drawFrame(const glm::mat4 cameraViewMatrix) {
 
 void VulkanRenderer::onFramebufferResize(int width, int height) {
     m_framebufferResized = true;
-}
-
-uint32_t VulkanRenderer::chooseSwapMinImageCount(
-    const vk::SurfaceCapabilitiesKHR &surfaceCapabilities) {
-    auto minImageCount = std::max(3u, surfaceCapabilities.minImageCount);
-    if ((0 < surfaceCapabilities.maxImageCount) &&
-        (surfaceCapabilities.maxImageCount < minImageCount)) {
-        minImageCount = surfaceCapabilities.maxImageCount;
-    }
-
-    return minImageCount;
-}
-
-vk::SurfaceFormatKHR VulkanRenderer::chooseSwapSurfaceFormat(
-    const std::vector<vk::SurfaceFormatKHR> &availableFormats) {
-    assert(!availableFormats.empty());
-    const auto formatIterator =
-        std::ranges::find_if(availableFormats, [](const auto &format) {
-            return format.format == vk::Format::eB8G8R8A8Srgb &&
-                   format.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear;
-        });
-
-    return formatIterator != availableFormats.end() ? *formatIterator
-                                                    : availableFormats[0];
-}
-
-vk::PresentModeKHR VulkanRenderer::chooseSwapPresentMode(
-    const std::vector<vk::PresentModeKHR> &availablePresentModes) {
-    assert(std::ranges::any_of(availablePresentModes, [](auto presentMode) {
-        return presentMode == vk::PresentModeKHR::eFifo;
-    }));
-
-    return std::ranges::any_of(availablePresentModes,
-                               [](const vk::PresentModeKHR value) {
-                                   return vk::PresentModeKHR::eMailbox == value;
-                               })
-               ? vk::PresentModeKHR::eMailbox
-               : vk::PresentModeKHR::eFifo;
-}
-
-vk::Extent2D VulkanRenderer::chooseSwapExtent(
-    const vk::SurfaceCapabilitiesKHR &capabilities) {
-    if (capabilities.currentExtent.width !=
-        std::numeric_limits<uint32_t>::max()) {
-        return capabilities.currentExtent;
-    }
-
-    int width;
-    int height;
-    glfwGetFramebufferSize(m_glfwWindow, &width, &height);
-    return {std::clamp<uint32_t>(width, capabilities.minImageExtent.width,
-                                 capabilities.maxImageExtent.width),
-            std::clamp<uint32_t>(height, capabilities.minImageExtent.height,
-                                 capabilities.maxImageExtent.height)};
 }
 
 vk::raii::ShaderModule VulkanRenderer::createShaderModule(
@@ -210,7 +154,7 @@ void VulkanRenderer::recordCommandBuffer(uint32_t imageIndex) {
     vk::ClearValue clearColor = vk::ClearColorValue(0.529, 0.807, 0.921, 1.0f);
     vk::RenderingAttachmentInfo attachmentInfo =
         vk::RenderingAttachmentInfo()
-            .setImageView(m_swapchainImageViews[imageIndex])
+            .setImageView(m_swapchain.imageViews()[imageIndex])
             .setImageLayout(vk::ImageLayout::eColorAttachmentOptimal)
             .setLoadOp(vk::AttachmentLoadOp::eClear)
             .setStoreOp(vk::AttachmentStoreOp::eStore)
@@ -218,7 +162,7 @@ void VulkanRenderer::recordCommandBuffer(uint32_t imageIndex) {
 
     vk::RenderingInfo renderingInfo =
         vk::RenderingInfo()
-            .setRenderArea(vk::Rect2D(vk::Offset2D(0, 0), m_swapchainExtent))
+            .setRenderArea(vk::Rect2D(vk::Offset2D(0, 0), m_swapchain.extent()))
             .setLayerCount(1)
             .setColorAttachmentCount(1)
             .setPColorAttachments(&attachmentInfo);
@@ -229,11 +173,12 @@ void VulkanRenderer::recordCommandBuffer(uint32_t imageIndex) {
             vk::PipelineBindPoint::eGraphics, m_graphicsPipeline);
 
         m_commandBuffers[m_currentFrame].setViewport(
-            0, vk::Viewport(
-                   0.0f, 0.0f, static_cast<float>(m_swapchainExtent.width),
-                   static_cast<float>(m_swapchainExtent.height), 0.0f, 1.0f));
+            0, vk::Viewport(0.0f, 0.0f,
+                            static_cast<float>(m_swapchain.extent().width),
+                            static_cast<float>(m_swapchain.extent().height),
+                            0.0f, 1.0f));
         m_commandBuffers[m_currentFrame].setScissor(
-            0, vk::Rect2D(vk::Offset2D(0, 0), m_swapchainExtent));
+            0, vk::Rect2D(vk::Offset2D(0, 0), m_swapchain.extent()));
 
         m_commandBuffers[m_currentFrame].bindVertexBuffers(0, *m_vertexBuffer,
                                                            {0});
@@ -313,7 +258,7 @@ void VulkanRenderer::transitionImageLayout(
             .setNewLayout(newLayout)
             .setSrcQueueFamilyIndex(vk::QueueFamilyIgnored)
             .setDstQueueFamilyIndex(vk::QueueFamilyIgnored)
-            .setImage(m_swapchainImages[imageIndex])
+            .setImage(m_swapchain.images()[imageIndex])
             .setSubresourceRange(vk::ImageSubresourceRange(
                 /* aspectMask */ vk::ImageAspectFlagBits::eColor,
                 /* baseMipLevel */ 0,
@@ -327,19 +272,6 @@ void VulkanRenderer::transitionImageLayout(
                                             .setPImageMemoryBarriers(&barrier);
 
     m_commandBuffers[m_currentFrame].pipelineBarrier2(dependencyInfo);
-}
-
-void VulkanRenderer::cleanupSwapchain() {
-    m_swapchainImageViews.clear();
-    m_swapchain = nullptr;
-}
-
-void VulkanRenderer::recreateSwapchain() {
-    m_device.handle().waitIdle();
-
-    cleanupSwapchain();
-    createSwapchain();
-    createImageViews();
 }
 
 uint32_t VulkanRenderer::findMemoryType(uint32_t typeFilter,
@@ -425,8 +357,8 @@ void VulkanRenderer::updateUniformBuffer(const uint32_t currentImage,
 
     ubo.projection =
         glm::perspective(glm::radians(45.0f),
-                         static_cast<float>(m_swapchainExtent.width) /
-                             static_cast<float>(m_swapchainExtent.height),
+                         static_cast<float>(m_swapchain.extent().width) /
+                             static_cast<float>(m_swapchain.extent().height),
                          0.1f, 10.f);
 
     // Flipping Y coordinate of clip coordinates to match Vulkan's
@@ -523,63 +455,6 @@ vk::raii::ImageView VulkanRenderer::createImageView(vk::raii::Image &image,
                 vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1));
 
     return vk::raii::ImageView(m_device.handle(), viewInfo);
-}
-
-void VulkanRenderer::createSwapchain() {
-    auto surfaceCapabilities =
-        m_physicalDevice.handle().getSurfaceCapabilitiesKHR(
-            *m_surface.handle());
-    m_swapchainExtent = chooseSwapExtent(surfaceCapabilities);
-    m_swapchainSurfaceFormat = chooseSwapSurfaceFormat(
-        m_physicalDevice.handle().getSurfaceFormatsKHR(*m_surface.handle()));
-
-    vk::SwapchainCreateInfoKHR swapchainCreateinfo =
-        vk::SwapchainCreateInfoKHR()
-            .setSurface(*m_surface.handle())
-            .setMinImageCount(chooseSwapMinImageCount(surfaceCapabilities))
-            .setImageFormat(m_swapchainSurfaceFormat.format)
-            .setImageColorSpace(m_swapchainSurfaceFormat.colorSpace)
-            .setImageExtent(m_swapchainExtent)
-            .setImageArrayLayers(1)
-            .setImageUsage(vk::ImageUsageFlagBits::eColorAttachment)
-            .setImageSharingMode(vk::SharingMode::eExclusive)
-            .setPreTransform(surfaceCapabilities.currentTransform)
-            .setCompositeAlpha(vk::CompositeAlphaFlagBitsKHR::eOpaque)
-            .setPresentMode(chooseSwapPresentMode(
-                m_physicalDevice.handle().getSurfacePresentModesKHR(
-                    *m_surface.handle())))
-            .setClipped(vk::True);
-
-    m_swapchain =
-        vk::raii::SwapchainKHR(m_device.handle(), swapchainCreateinfo);
-    m_swapchainImages = m_swapchain.getImages();
-
-    if (m_isFirstRun) {
-        Debug::log("[Vulkan] Created: Swapchain",
-                   Debug::MessageSeverity::eInformation);
-    }
-}
-
-void VulkanRenderer::createImageViews() {
-    assert(m_swapchainImageViews.empty());
-
-    vk::ImageViewCreateInfo imageViewCreateInfo =
-        vk::ImageViewCreateInfo()
-            .setViewType(vk::ImageViewType::e2D)
-            .setFormat(m_swapchainSurfaceFormat.format)
-            .setSubresourceRange(vk::ImageSubresourceRange(
-                vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1));
-
-    for (const auto image : m_swapchainImages) {
-        imageViewCreateInfo.setImage(image);
-        m_swapchainImageViews.emplace_back(m_device.handle(),
-                                           imageViewCreateInfo);
-    }
-
-    if (m_isFirstRun) {
-        Debug::log("[Vulkan] Created: ImageViews",
-                   Debug::MessageSeverity::eInformation);
-    }
 }
 
 void VulkanRenderer::createDescriptorSetLayout() {
@@ -706,7 +581,7 @@ void VulkanRenderer::createGraphicsPipeline() {
     vk::PipelineRenderingCreateInfo pipelineRenderingInfo =
         vk::PipelineRenderingCreateInfo()
             .setColorAttachmentCount(1)
-            .setPColorAttachmentFormats(&m_swapchainSurfaceFormat.format);
+            .setPColorAttachmentFormats(&m_swapchain.surfaceFormat().format);
 
     vk::StructureChain<vk::GraphicsPipelineCreateInfo,
                        vk::PipelineRenderingCreateInfo>
@@ -974,7 +849,7 @@ void VulkanRenderer::createSyncObjects() {
     m_renderFinishedSemaphores.clear();
     m_inFlightFences.clear();
 
-    for (uint32_t i = 0; i < m_swapchainImages.size(); ++i) {
+    for (uint32_t i = 0; i < m_swapchain.images().size(); ++i) {
         m_presentCompleteSemaphores.emplace_back(m_device.handle(),
                                                  vk::SemaphoreCreateInfo());
         m_renderFinishedSemaphores.emplace_back(m_device.handle(),

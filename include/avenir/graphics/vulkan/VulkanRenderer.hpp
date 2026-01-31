@@ -22,6 +22,7 @@
 #include "avenir/graphics/vulkan/VulkanSurface.hpp"
 #include "avenir/graphics/vulkan/VulkanPhysicalDevice.hpp"
 #include "avenir/graphics/vulkan/VulkanDevice.hpp"
+#include "avenir/graphics/vulkan/VulkanSwapchain.hpp"
 
 namespace avenir::graphics::vulkan {
 class VulkanRenderer final : public Renderer {
@@ -64,18 +65,6 @@ private:
         alignas(16) glm::mat4 projection;
     };
 
-    static uint32_t chooseSwapMinImageCount(
-        vk::SurfaceCapabilitiesKHR const &surfaceCapabilities);
-
-    static vk::SurfaceFormatKHR chooseSwapSurfaceFormat(
-        const std::vector<vk::SurfaceFormatKHR> &availableFormats);
-
-    static vk::PresentModeKHR chooseSwapPresentMode(
-        const std::vector<vk::PresentModeKHR> &availablePresentModes);
-
-    vk::Extent2D chooseSwapExtent(
-        const vk::SurfaceCapabilitiesKHR &capabilities);
-
     [[nodiscard]] vk::raii::ShaderModule createShaderModule(
         const std::vector<char> &code) const;
 
@@ -91,10 +80,6 @@ private:
     void transitionImageLayout(const vk::raii::Image &image,
                                vk::ImageLayout oldLayout,
                                vk::ImageLayout newLayout);
-
-    void cleanupSwapchain();
-
-    void recreateSwapchain();
 
     uint32_t findMemoryType(uint32_t typeFilter,
                             vk::MemoryPropertyFlags properties);
@@ -130,9 +115,6 @@ private:
     [[nodiscard]] vk::raii::ImageView createImageView(vk::raii::Image &image,
                                                       vk::Format format);
 
-    // void createLogicalDevice();
-    void createSwapchain();
-    void createImageViews();
     void createDescriptorSetLayout();
     void createGraphicsPipeline();
     void createCommandPool();
@@ -153,12 +135,7 @@ private:
     VulkanSurface m_surface;
     VulkanPhysicalDevice m_physicalDevice;
     VulkanDevice m_device;
-
-    vk::raii::SwapchainKHR m_swapchain = nullptr;
-    std::vector<vk::Image> m_swapchainImages;
-    vk::SurfaceFormatKHR m_swapchainSurfaceFormat;
-    vk::Extent2D m_swapchainExtent;
-    std::vector<vk::raii::ImageView> m_swapchainImageViews;
+    VulkanSwapchain m_swapchain;
 
     vk::raii::DescriptorSetLayout m_descriptorSetLayout = nullptr;
     vk::raii::PipelineLayout m_pipelineLayout = nullptr;
