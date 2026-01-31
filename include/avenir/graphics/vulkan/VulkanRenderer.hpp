@@ -68,26 +68,26 @@ private:
     [[nodiscard]] vk::raii::ShaderModule createShaderModule(
         const std::vector<char> &code) const;
 
-    void recordCommandBuffer(uint32_t imageIndex);
+    void recordCommandBuffer(uint32_t imageIndex) const;
 
-    void transitionImageLayout(uint32_t imageIndex, vk::ImageLayout oldLayout,
-                               vk::ImageLayout newLayout,
-                               vk::AccessFlags2 sourceAccessMask,
-                               vk::AccessFlags2 destinationAccessMask,
-                               vk::PipelineStageFlags2 sourceStageMask,
-                               vk::PipelineStageFlags2 destinationStageMask);
+    void transitionImageLayout(
+        uint32_t imageIndex, vk::ImageLayout oldLayout,
+        vk::ImageLayout newLayout, vk::AccessFlags2 sourceAccessMask,
+        vk::AccessFlags2 destinationAccessMask,
+        vk::PipelineStageFlags2 sourceStageMask,
+        vk::PipelineStageFlags2 destinationStageMask) const;
 
     void transitionImageLayout(const vk::raii::Image &image,
                                vk::ImageLayout oldLayout,
-                               vk::ImageLayout newLayout);
+                               vk::ImageLayout newLayout) const;
 
     uint32_t findMemoryType(uint32_t typeFilter,
-                            vk::MemoryPropertyFlags properties);
+                            vk::MemoryPropertyFlags properties) const;
 
     void createBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage,
                       vk::MemoryPropertyFlags properties,
                       vk::raii::Buffer &buffer,
-                      vk::raii::DeviceMemory &bufferMemory);
+                      vk::raii::DeviceMemory &bufferMemory) const;
 
     void copyBuffer(const vk::raii::Buffer &sourceBuffer,
                     const vk::raii::Buffer &destinationBuffer,
@@ -105,15 +105,15 @@ private:
     void createImage(uint32_t width, uint32_t height, vk::Format format,
                      vk::ImageTiling tiling, vk::ImageUsageFlags usage,
                      vk::MemoryPropertyFlags properties, vk::raii::Image &image,
-                     vk::raii::DeviceMemory &imageMemory);
+                     vk::raii::DeviceMemory &imageMemory) const;
 
     [[nodiscard]] vk::raii::CommandBuffer beginSingleTimeCommands() const;
 
     void endSingleTimeCommands(
         const vk::raii::CommandBuffer &commandBuffer) const;
 
-    [[nodiscard]] vk::raii::ImageView createImageView(vk::raii::Image &image,
-                                                      vk::Format format);
+    [[nodiscard]] vk::raii::ImageView createImageView(
+        const vk::raii::Image &image, vk::Format format) const;
 
     void createDescriptorSetLayout();
     void createGraphicsPipeline();
@@ -163,10 +163,11 @@ private:
     std::vector<vk::raii::Semaphore> m_renderFinishedSemaphores;
     std::vector<vk::raii::Fence> m_inFlightFences;
     uint32_t m_semaphoreIndex = 0;
+
     uint32_t m_currentFrame = 0;
     static constexpr uint32_t m_kFramesInFlight = 2;
+
     bool m_framebufferResized = false;
-    bool m_isFirstRun = true;
 
     /*
      * Vulkan and glTF models by default handles vertices in a

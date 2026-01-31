@@ -33,8 +33,6 @@ VulkanRenderer::VulkanRenderer(GLFWwindow *window)
     createCommandBuffers();
     createSyncObjects();
 
-    m_isFirstRun = false;
-
     std::cout << "---------------------------------------------------\n";
     Debug::log("[Vulkan] Successfully initiated, now rendering...",
                Debug::MessageSeverity::eInformation);
@@ -140,7 +138,7 @@ vk::raii::ShaderModule VulkanRenderer::createShaderModule(
     return shaderModule;
 }
 
-void VulkanRenderer::recordCommandBuffer(uint32_t imageIndex) {
+void VulkanRenderer::recordCommandBuffer(const uint32_t imageIndex) const {
     m_commandBuffers[m_currentFrame].begin({});
 
     // Before rendering, transition the swapchain image to
@@ -151,8 +149,9 @@ void VulkanRenderer::recordCommandBuffer(uint32_t imageIndex) {
                           vk::PipelineStageFlagBits2::eColorAttachmentOutput,
                           vk::PipelineStageFlagBits2::eColorAttachmentOutput);
 
-    vk::ClearValue clearColor = vk::ClearColorValue(0.529, 0.807, 0.921, 1.0f);
-    vk::RenderingAttachmentInfo attachmentInfo =
+    constexpr vk::ClearValue clearColor =
+        vk::ClearColorValue(0.529, 0.807, 0.921, 1.0f);
+    const vk::RenderingAttachmentInfo attachmentInfo =
         vk::RenderingAttachmentInfo()
             .setImageView(m_swapchain.imageViews()[imageIndex])
             .setImageLayout(vk::ImageLayout::eColorAttachmentOptimal)
@@ -160,7 +159,7 @@ void VulkanRenderer::recordCommandBuffer(uint32_t imageIndex) {
             .setStoreOp(vk::AttachmentStoreOp::eStore)
             .setClearValue(clearColor);
 
-    vk::RenderingInfo renderingInfo =
+    const vk::RenderingInfo renderingInfo =
         vk::RenderingInfo()
             .setRenderArea(vk::Rect2D(vk::Offset2D(0, 0), m_swapchain.extent()))
             .setLayerCount(1)
@@ -204,10 +203,10 @@ void VulkanRenderer::recordCommandBuffer(uint32_t imageIndex) {
     m_commandBuffers[m_currentFrame].end();
 }
 
-void VulkanRenderer::transitionImageLayout(const vk::raii::Image &image,
-                                           vk::ImageLayout oldLayout,
-                                           vk::ImageLayout newLayout) {
-    vk::raii::CommandBuffer commandBuffer = beginSingleTimeCommands();
+void VulkanRenderer::transitionImageLayout(
+    const vk::raii::Image &image, const vk::ImageLayout oldLayout,
+    const vk::ImageLayout newLayout) const {
+    const vk::raii::CommandBuffer commandBuffer = beginSingleTimeCommands();
 
     vk::ImageMemoryBarrier barrier =
         vk::ImageMemoryBarrier()
@@ -244,11 +243,12 @@ void VulkanRenderer::transitionImageLayout(const vk::raii::Image &image,
 }
 
 void VulkanRenderer::transitionImageLayout(
-    uint32_t imageIndex, vk::ImageLayout oldLayout, vk::ImageLayout newLayout,
-    vk::AccessFlags2 sourceAccessMask, vk::AccessFlags2 destinationAccessMask,
-    vk::PipelineStageFlags2 sourceStageMask,
-    vk::PipelineStageFlags2 destinationStageMask) {
-    vk::ImageMemoryBarrier2 barrier =
+    const uint32_t imageIndex, const vk::ImageLayout oldLayout,
+    const vk::ImageLayout newLayout, const vk::AccessFlags2 sourceAccessMask,
+    const vk::AccessFlags2 destinationAccessMask,
+    const vk::PipelineStageFlags2 sourceStageMask,
+    const vk::PipelineStageFlags2 destinationStageMask) const {
+    const vk::ImageMemoryBarrier2 barrier =
         vk::ImageMemoryBarrier2()
             .setSrcStageMask(sourceStageMask)
             .setSrcAccessMask(sourceAccessMask)
@@ -266,17 +266,18 @@ void VulkanRenderer::transitionImageLayout(
                 /* baseArrayLayer */ 0,
                 /* layerCount */ 1));
 
-    vk::DependencyInfo dependencyInfo = vk::DependencyInfo()
-                                            .setDependencyFlags({})
-                                            .setImageMemoryBarrierCount(1)
-                                            .setPImageMemoryBarriers(&barrier);
+    const vk::DependencyInfo dependencyInfo =
+        vk::DependencyInfo()
+            .setDependencyFlags({})
+            .setImageMemoryBarrierCount(1)
+            .setPImageMemoryBarriers(&barrier);
 
     m_commandBuffers[m_currentFrame].pipelineBarrier2(dependencyInfo);
 }
 
-uint32_t VulkanRenderer::findMemoryType(uint32_t typeFilter,
-                                        vk::MemoryPropertyFlags properties) {
-    vk::PhysicalDeviceMemoryProperties memoryProperties =
+uint32_t VulkanRenderer::findMemoryType(
+    const uint32_t typeFilter, const vk::MemoryPropertyFlags properties) const {
+    const vk::PhysicalDeviceMemoryProperties memoryProperties =
         m_physicalDevice.handle().getMemoryProperties();
     for (uint32_t i = 0; i < memoryProperties.memoryTypeCount; ++i) {
         // If there is a memory type suitable for the buffer that also has all
@@ -292,19 +293,20 @@ uint32_t VulkanRenderer::findMemoryType(uint32_t typeFilter,
         "[Vulkan] Error: Failed to find suitable memory type!\n");
 }
 
-void VulkanRenderer::createBuffer(vk::DeviceSize size,
-                                  vk::BufferUsageFlags usage,
-                                  vk::MemoryPropertyFlags properties,
+void VulkanRenderer::createBuffer(const vk::DeviceSize size,
+                                  const vk::BufferUsageFlags usage,
+                                  const vk::MemoryPropertyFlags properties,
                                   vk::raii::Buffer &buffer,
-                                  vk::raii::DeviceMemory &bufferMemory) {
-    vk::BufferCreateInfo bufferInfo =
+                                  vk::raii::DeviceMemory &bufferMemory) const {
+    const vk::BufferCreateInfo bufferInfo =
         vk::BufferCreateInfo().setSize(size).setUsage(usage).setSharingMode(
             vk::SharingMode::eExclusive);
 
     buffer = vk::raii::Buffer(m_device.handle(), bufferInfo);
 
-    vk::MemoryRequirements memoryRequirements = buffer.getMemoryRequirements();
-    vk::MemoryAllocateInfo memoryAllocateInfo =
+    const vk::MemoryRequirements memoryRequirements =
+        buffer.getMemoryRequirements();
+    const vk::MemoryAllocateInfo memoryAllocateInfo =
         vk::MemoryAllocateInfo()
             .setAllocationSize(memoryRequirements.size)
             .setMemoryTypeIndex(
@@ -387,7 +389,7 @@ void VulkanRenderer::createImage(const uint32_t width, const uint32_t height,
                                  const vk::ImageUsageFlags usage,
                                  const vk::MemoryPropertyFlags properties,
                                  vk::raii::Image &image,
-                                 vk::raii::DeviceMemory &imageMemory) {
+                                 vk::raii::DeviceMemory &imageMemory) const {
     const vk::ImageCreateInfo imageInfo =
         vk::ImageCreateInfo()
             .setImageType(vk::ImageType::e2D)
@@ -444,9 +446,9 @@ void VulkanRenderer::endSingleTimeCommands(
     m_device.queue().waitIdle();
 }
 
-vk::raii::ImageView VulkanRenderer::createImageView(vk::raii::Image &image,
-                                                    vk::Format format) {
-    vk::ImageViewCreateInfo viewInfo =
+vk::raii::ImageView VulkanRenderer::createImageView(
+    const vk::raii::Image &image, vk::Format format) const {
+    const vk::ImageViewCreateInfo viewInfo =
         vk::ImageViewCreateInfo()
             .setImage(image)
             .setViewType(vk::ImageViewType::e2D)
