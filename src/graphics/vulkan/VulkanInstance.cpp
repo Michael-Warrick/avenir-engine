@@ -12,9 +12,7 @@ VulkanInstance::VulkanInstance() {
     setupDebugMessenger();
 }
 
-const vk::raii::Instance &VulkanInstance::handle() const {
-    return m_instance;
-}
+const vk::raii::Instance &VulkanInstance::handle() const { return m_instance; }
 
 void VulkanInstance::printAllAvailableInstanceExtensions() const {
     Debug::log("[Vulkan] Available instance extensions:",
