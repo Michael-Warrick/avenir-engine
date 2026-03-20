@@ -22,29 +22,31 @@ std::optional<Entity *> Scene::findEntityById(const uint32_t id) {
     return it != m_entities.end() ? &it->second : nullptr;
 }
 
-void Scene::setEntityParent(const uint32_t child,
+void Scene::setEntityParent(const uint32_t childId,
                             const std::optional<uint32_t> parent) {
-    const std::optional<Entity *> entity = findEntityById(child);
-    if (parent && (*parent == child)) {
+    const std::optional<Entity *> entity = findEntityById(childId);
+    if (parent && (*parent == childId)) {
         throw std::runtime_error("Error: Entity cannot parent itself!\n");
     }
 
+    // Remove child entity from previous parent
     if (entity.value()->parent()) {
-        std::optional<Entity *> previousParent =
+        const std::optional<Entity *> previousParent =
             findEntityById(*entity.value()->parent());
-        previousParent.value()->removeChild(child);
+        previousParent.value()->removeChild(childId);
     }
 
     entity.value()->setParent(parent);
 
+    // Assign the child entity to the new parent
     if (parent) {
         const std::optional<Entity *> newParent = findEntityById(*parent);
-        newParent.value()->addChild(child);
+        newParent.value()->addChild(childId);
     }
 }
 
-void Scene::detachEntityFromParent(uint32_t child) {
-    setEntityParent(child, std::nullopt);
+void Scene::setEntityParentToNone(const uint32_t childId) {
+    setEntityParent(childId, std::nullopt);
 }
 
 glm::mat4 Scene::entityWorldMatrix(const uint32_t id) {

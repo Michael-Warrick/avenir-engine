@@ -15,13 +15,15 @@ private:
     [[nodiscard]] std::optional<avenir::Entity *>
     findChildEntityWithCameraComponent() const;
 
-    static void checkIfCameraEntityIsPrimary(
-        const avenir::Entity &cameraEntity);
+    static bool isCameraMarkedPrimary(const avenir::Camera &camera);
 
     void handleKeyboardInput(float deltaTime) const;
     void handleMousePosition();
 
     avenir::Entity &m_player;
+
+    // Cannot be a reference as it would otherwise need to be specified during
+    // construction of the FPSController class.
     avenir::Entity *m_camera;
 
     avenir::Scene &m_scene;

@@ -3,16 +3,28 @@
 #include "FPSController.hpp"
 
 #include <glm/gtc/quaternion.hpp>
-#include <avenir/avenir.hpp>
+#include <avenir/debug/Debug.hpp>
 
 FPSController::FPSController(avenir::Entity &player, avenir::Scene &scene,
                              avenir::InputManager &inputManager)
     : m_player(player), m_scene(scene), m_inputManager(inputManager) {
-    avenir::Entity &playerCamera =
-        *findChildEntityWithCameraComponent().value();
-    checkIfCameraEntityIsPrimary(playerCamera);
+    const std::optional<avenir::Entity *> playerCamera =
+        findChildEntityWithCameraComponent();
+    if (!playerCamera.has_value()) {
+        avenir::Debug::log(
+            "Failed to locate child entity with camera component!",
+            avenir::Debug::MessageSeverity::eError);
+        return;
+    }
 
-    m_camera = &playerCamera;
+    if (!isCameraMarkedPrimary(
+            playerCamera.value()->component<avenir::Camera>())) {
+        avenir::Debug::log("Found camera but is not marked as primary!",
+                           avenir::Debug::MessageSeverity::eWarning);
+        return;
+    }
+
+    m_camera = playerCamera.value();
     m_inputManager.setCursorMode(avenir::CursorMode::eDisabled);
 }
 
@@ -23,25 +35,23 @@ void FPSController::update(const float deltaTime) {
 
 std::optional<avenir::Entity *>
 FPSController::findChildEntityWithCameraComponent() const {
-    uint32_t playerCameraEntityId = 0;
     for (const uint32_t child : m_player.children()) {
         const avenir::Entity &childEntity =
             *m_scene.findEntityById(child).value();
         if (childEntity.hasComponent<avenir::Camera>()) {
-            playerCameraEntityId = childEntity.id();
+            return m_scene.findEntityById(childEntity.id());
         }
     }
 
-    return m_scene.findEntityById(playerCameraEntityId);
+    return nullptr;
 }
 
-void FPSController::checkIfCameraEntityIsPrimary(
-    const avenir::Entity &cameraEntity) {
-    if (!cameraEntity.component<avenir::Camera>().isPrimary) {
-        throw std::runtime_error(
-            "Error: Provided player entity has a camera component but attached "
-            "camera is not marked as \"isPrimary\"!");
+bool FPSController::isCameraMarkedPrimary(const avenir::Camera &camera) {
+    if (!camera.isPrimary) {
+        return false;
     }
+
+    return true;
 }
 
 void FPSController::handleKeyboardInput(const float deltaTime) const {

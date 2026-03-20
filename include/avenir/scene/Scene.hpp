@@ -17,8 +17,8 @@ public:
     Entity &createEntity();
     std::optional<Entity *> findEntityById(uint32_t id);
 
-    void setEntityParent(uint32_t child, std::optional<uint32_t> parent);
-    void detachEntityFromParent(uint32_t child);
+    void setEntityParent(uint32_t childId, std::optional<uint32_t> parent);
+    void setEntityParentToNone(uint32_t childId);
 
     glm::mat4 entityWorldMatrix(uint32_t id);
     glm::mat4 entityInverseWorldMatrix(uint32_t id);

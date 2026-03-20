@@ -55,4 +55,7 @@ add_custom_target(simple_fps_textures ALL
 )
 
 add_slang_shader_target_simple_fps(simple_fps_shader SOURCES resources/shaders/shader.slang)
-add_dependencies(simple_fps simple_fps_shader simple_fps_textures)
+add_dependencies(simple_fps
+        simple_fps_shader
+        simple_fps_textures
+)
