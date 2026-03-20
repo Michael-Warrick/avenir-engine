@@ -1,4 +1,4 @@
-#include "avenir/graphics/vulkan/VulkanRenderer.hpp"
+#include "avenir/graphics/vulkan/vulkan_renderer.hpp"
 
 #include <chrono>
 #include <cstdint>
@@ -7,7 +7,7 @@
 #include <string>
 #include <vector>
 
-#include "avenir/debug/Debug.hpp"
+#include "avenir/debug/debug.hpp"
 
 namespace avenir::graphics::vulkan {
 
@@ -35,16 +35,16 @@ VulkanRenderer::VulkanRenderer(GLFWwindow *window)
     createSyncObjects();
 
     std::cout << "---------------------------------------------------\n";
-    Debug::log("[Vulkan] Successfully initiated, now rendering...",
-               Debug::MessageSeverity::eInformation);
+    debug::log("[Vulkan] Successfully initiated, now rendering...",
+               debug::MessageSeverity::eInformation);
 }
 
 VulkanRenderer::~VulkanRenderer() {
     m_device.handle().waitIdle();
 
     std::cout << "---------------------------------------------------\n";
-    Debug::log("[Vulkan] Shutting down...",
-               Debug::MessageSeverity::eInformation);
+    debug::log("[Vulkan] Shutting down...",
+               debug::MessageSeverity::eInformation);
 }
 
 void VulkanRenderer::drawFrame(const glm::mat4 cameraViewMatrix) {
@@ -538,8 +538,8 @@ void VulkanRenderer::createDescriptorSetLayout() {
     m_descriptorSetLayout =
         vk::raii::DescriptorSetLayout(m_device.handle(), layoutInfo);
 
-    Debug::log("[Vulkan] Created: DescriptorSetLayout",
-               Debug::MessageSeverity::eInformation);
+    debug::log("[Vulkan] Created: DescriptorSetLayout",
+               debug::MessageSeverity::eInformation);
 }
 
 void VulkanRenderer::createGraphicsPipeline() {
@@ -633,8 +633,8 @@ void VulkanRenderer::createGraphicsPipeline() {
     m_pipelineLayout =
         vk::raii::PipelineLayout(m_device.handle(), pipelineLayoutInfo);
 
-    Debug::log("[Vulkan] Created: Pipeline Layout (Graphics)",
-               Debug::MessageSeverity::eInformation);
+    debug::log("[Vulkan] Created: Pipeline Layout (Graphics)",
+               debug::MessageSeverity::eInformation);
 
     vk::Format depthFormat = findDepthFormat();
 
@@ -667,8 +667,8 @@ void VulkanRenderer::createGraphicsPipeline() {
         m_device.handle(), nullptr,
         pipelineCreateInfoChain.get<vk::GraphicsPipelineCreateInfo>());
 
-    Debug::log("[Vulkan] Created: Pipeline (Graphics)",
-               Debug::MessageSeverity::eInformation);
+    debug::log("[Vulkan] Created: Pipeline (Graphics)",
+               debug::MessageSeverity::eInformation);
 }
 
 void VulkanRenderer::createCommandPool() {
@@ -679,8 +679,8 @@ void VulkanRenderer::createCommandPool() {
 
     m_commandPool = vk::raii::CommandPool(m_device.handle(), poolInfo);
 
-    Debug::log("[Vulkan] Created: Command Pool",
-               Debug::MessageSeverity::eInformation);
+    debug::log("[Vulkan] Created: Command Pool",
+               debug::MessageSeverity::eInformation);
 }
 
 void VulkanRenderer::createDepthResources() {
@@ -700,13 +700,13 @@ void VulkanRenderer::createTextureImage() {
     int textureChannels;
 
     stbi_uc *pixels =
-        stbi_load("textures/vulkan_debug_texture.png", &textureWidth,
-                  &textureHeight, &textureChannels, STBI_rgb_alpha);
+        stbi_load("textures/debug_texture.png", &textureWidth, &textureHeight,
+                  &textureChannels, STBI_rgb_alpha);
 
     const vk::DeviceSize imageSize = textureWidth * textureHeight * 4;
     if (!pixels) {
         throw std::runtime_error(
-            "Error: Failed to load parrot texture image!\n");
+            "Error: Failed to load debug texture image!\n");
     }
 
     vk::raii::Buffer stagingBuffer({});
@@ -738,8 +738,8 @@ void VulkanRenderer::createTextureImage() {
     transitionImageLayout(m_textureImage, vk::ImageLayout::eTransferDstOptimal,
                           vk::ImageLayout::eShaderReadOnlyOptimal);
 
-    Debug::log("[Vulkan] Created: Texture Image",
-               Debug::MessageSeverity::eInformation);
+    debug::log("[Vulkan] Created: Texture Image",
+               debug::MessageSeverity::eInformation);
 }
 
 void VulkanRenderer::createTextureImageView() {
@@ -747,8 +747,8 @@ void VulkanRenderer::createTextureImageView() {
         createImageView(m_textureImage, vk::Format::eR8G8B8A8Srgb,
                         vk::ImageAspectFlagBits::eColor);
 
-    Debug::log("[Vulkan] Created: Texture ImageView",
-               Debug::MessageSeverity::eInformation);
+    debug::log("[Vulkan] Created: Texture ImageView",
+               debug::MessageSeverity::eInformation);
 }
 
 void VulkanRenderer::createTextureSampler() {
@@ -771,8 +771,8 @@ void VulkanRenderer::createTextureSampler() {
 
     m_textureSampler = vk::raii::Sampler(m_device.handle(), samplerInfo);
 
-    Debug::log("[Vulkan] Created: Texture Sampler",
-               Debug::MessageSeverity::eInformation);
+    debug::log("[Vulkan] Created: Texture Sampler",
+               debug::MessageSeverity::eInformation);
 }
 
 void VulkanRenderer::createVertexBuffer() {
@@ -860,8 +860,8 @@ void VulkanRenderer::createDescriptorPool() {
 
     m_descriptorPool = vk::raii::DescriptorPool(m_device.handle(), poolInfo);
 
-    Debug::log("[Vulkan] Created: DescriptorPool",
-               Debug::MessageSeverity::eInformation);
+    debug::log("[Vulkan] Created: DescriptorPool",
+               debug::MessageSeverity::eInformation);
 }
 
 void VulkanRenderer::createDescriptorSets() {
@@ -909,8 +909,8 @@ void VulkanRenderer::createDescriptorSets() {
         m_device.handle().updateDescriptorSets(descriptorWrites, {});
     }
 
-    Debug::log("[Vulkan] Created: DescriptorSets",
-               Debug::MessageSeverity::eInformation);
+    debug::log("[Vulkan] Created: DescriptorSets",
+               debug::MessageSeverity::eInformation);
 }
 
 void VulkanRenderer::createCommandBuffers() {
@@ -928,8 +928,8 @@ void VulkanRenderer::createCommandBuffers() {
         m_commandBuffers.emplace_back(std::move(commandBuffers[i]));
     }
 
-    Debug::log("[Vulkan] Created: CommandBuffers",
-               Debug::MessageSeverity::eInformation);
+    debug::log("[Vulkan] Created: CommandBuffers",
+               debug::MessageSeverity::eInformation);
 }
 
 void VulkanRenderer::createSyncObjects() {
@@ -950,8 +950,8 @@ void VulkanRenderer::createSyncObjects() {
             vk::FenceCreateInfo(vk::FenceCreateFlagBits::eSignaled), nullptr);
     }
 
-    Debug::log("[Vulkan] Created: Sync Objects",
-               Debug::MessageSeverity::eInformation);
+    debug::log("[Vulkan] Created: Sync Objects",
+               debug::MessageSeverity::eInformation);
 }
 
 }  // namespace avenir::graphics::vulkan

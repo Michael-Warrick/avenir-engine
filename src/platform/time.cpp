@@ -1,4 +1,4 @@
-#include "avenir/platform/Time.hpp"
+#include "avenir/platform/time.hpp"
 
 namespace avenir::platform {
 

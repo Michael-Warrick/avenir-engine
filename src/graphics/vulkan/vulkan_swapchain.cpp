@@ -1,6 +1,6 @@
-#include "avenir/graphics/vulkan/VulkanSwapchain.hpp"
+#include "avenir/graphics/vulkan/vulkan_swapchain.hpp"
 
-#include "avenir/debug/Debug.hpp"
+#include "avenir/debug/debug.hpp"
 
 namespace avenir::graphics::vulkan {
 
@@ -13,12 +13,12 @@ VulkanSwapchain::VulkanSwapchain(GLFWwindow *window,
       m_physicalDevice(physicalDevice),
       m_device(device) {
     createSwapchain();
-    Debug::log("[Vulkan] Created: Swapchain",
-               Debug::MessageSeverity::eInformation);
+    debug::log("[Vulkan] Created: Swapchain",
+               debug::MessageSeverity::eInformation);
 
     createImageViews();
-    Debug::log("[Vulkan] Created: ImageViews",
-               Debug::MessageSeverity::eInformation);
+    debug::log("[Vulkan] Created: ImageViews",
+               debug::MessageSeverity::eInformation);
 }
 
 void VulkanSwapchain::recreate() { recreateSwapchain(); }

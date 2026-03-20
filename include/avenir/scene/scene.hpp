@@ -5,7 +5,7 @@
 
 #include <glm/mat4x4.hpp>
 
-#include "avenir/scene/Entity.hpp"
+#include "avenir/scene/entity.hpp"
 
 namespace avenir::scene {
 

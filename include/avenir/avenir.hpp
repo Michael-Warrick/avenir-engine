@@ -1,17 +1,17 @@
 #ifndef AVENIR_AVENIR_HPP
 #define AVENIR_AVENIR_HPP
 
-#include "avenir/platform/Time.hpp"
-#include "avenir/platform/Window.hpp"
-#include "avenir/input/InputManager.hpp"
-#include "avenir/graphics/Renderer.hpp"
-#include "avenir/scene/Entity.hpp"
-#include "avenir/scene/components/Camera.hpp"
-#include "avenir/scene/components/MeshRenderer.hpp"
-#include "avenir/scene/components/Transform.hpp"
-#include "avenir/scene/Scene.hpp"
-#include "avenir/debug/Debug.hpp"
-#include "avenir/graphics/Mesh.hpp"
+#include "avenir/platform/time.hpp"
+#include "avenir/platform/window.hpp"
+#include "avenir/input/input_manager.hpp"
+#include "avenir/graphics/renderer.hpp"
+#include "avenir/scene/entity.hpp"
+#include "avenir/scene/components/camera.hpp"
+#include "avenir/scene/components/mesh_renderer.hpp"
+#include "avenir/scene/components/transform.hpp"
+#include "avenir/scene/scene.hpp"
+#include "avenir/debug/debug.hpp"
+#include "avenir/graphics/mesh.hpp"
 
 namespace avenir {
 

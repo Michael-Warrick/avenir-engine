@@ -1,7 +1,7 @@
 #ifndef AVENIR_SCENE_COMPONENTS_CAMERA_HPP
 #define AVENIR_SCENE_COMPONENTS_CAMERA_HPP
 
-#include "avenir/scene/Component.hpp"
+#include "avenir/scene/component.hpp"
 
 namespace avenir::scene::components {
 

@@ -1,4 +1,4 @@
-#include "avenir/scene/Scene.hpp"
+#include "avenir/scene/scene.hpp"
 
 #include "avenir/avenir.hpp"
 

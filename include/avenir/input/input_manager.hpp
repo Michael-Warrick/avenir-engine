@@ -1,7 +1,7 @@
 #ifndef AVENIR_PLATFORM_INPUTMANAGER_HPP
 #define AVENIR_PLATFORM_INPUTMANAGER_HPP
 
-#include "avenir/platform/Window.hpp"
+#include "avenir/platform/window.hpp"
 
 namespace avenir::input {
 

@@ -1,6 +1,6 @@
-#include "avenir/graphics/vulkan/VulkanSurface.hpp"
+#include "avenir/graphics/vulkan/vulkan_surface.hpp"
 
-#include "avenir/debug/Debug.hpp"
+#include "avenir/debug/debug.hpp"
 
 namespace avenir::graphics::vulkan {
 
@@ -22,8 +22,8 @@ void VulkanSurface::createSurface() {
 
     m_surface = vk::raii::SurfaceKHR(m_instance, surface);
 
-    Debug::log("[Vulkan] Created: Surface",
-               Debug::MessageSeverity::eInformation);
+    debug::log("[Vulkan] Created: Surface",
+               debug::MessageSeverity::eInformation);
 }
 
 }  // namespace avenir::graphics::vulkan

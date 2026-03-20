@@ -3,7 +3,7 @@
 
 #include <vulkan/vulkan_raii.hpp>
 
-#include "avenir/graphics/Mesh.hpp"
+#include "avenir/graphics/mesh.hpp"
 
 namespace avenir::graphics::vulkan {
 

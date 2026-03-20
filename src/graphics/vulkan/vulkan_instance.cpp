@@ -1,7 +1,7 @@
-#include "avenir/graphics/vulkan/VulkanInstance.hpp"
+#include "avenir/graphics/vulkan/vulkan_instance.hpp"
 
 #include <GLFW/glfw3.h>
-#include "avenir/debug/Debug.hpp"
+#include "avenir/debug/debug.hpp"
 
 #include <iostream>
 
@@ -15,14 +15,14 @@ VulkanInstance::VulkanInstance() {
 const vk::raii::Instance &VulkanInstance::handle() const { return m_instance; }
 
 void VulkanInstance::printAllAvailableInstanceExtensions() const {
-    Debug::log("[Vulkan] Available instance extensions:",
-               Debug::MessageSeverity::eInformation);
+    debug::log("[Vulkan] Available instance extensions:",
+               debug::MessageSeverity::eInformation);
 
     auto extensions = m_context.enumerateInstanceExtensionProperties();
     for (const auto &extension : extensions) {
         std::string extensionName =
             "\t\t" + static_cast<std::string>(extension.extensionName.data());
-        Debug::log(extensionName, Debug::MessageSeverity::eInformation);
+        debug::log(extensionName, debug::MessageSeverity::eInformation);
     }
 }
 
@@ -110,8 +110,8 @@ void VulkanInstance::createInstance() {
 
     m_instance = vk::raii::Instance(m_context, instanceCreateInfo);
 
-    Debug::log("[Vulkan] Created: Instance",
-               Debug::MessageSeverity::eInformation);
+    debug::log("[Vulkan] Created: Instance",
+               debug::MessageSeverity::eInformation);
 }
 
 void VulkanInstance::setupDebugMessenger() {
@@ -139,8 +139,8 @@ void VulkanInstance::setupDebugMessenger() {
 
     m_debugMessenger = m_instance.createDebugUtilsMessengerEXT(createInfo);
 
-    Debug::log("[Vulkan] Created: DebugUtilsMessenger",
-               Debug::MessageSeverity::eInformation);
+    debug::log("[Vulkan] Created: DebugUtilsMessenger",
+               debug::MessageSeverity::eInformation);
 }
 
 }  // namespace avenir::graphics::vulkan

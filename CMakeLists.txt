@@ -10,35 +10,35 @@ add_subdirectory(vendor/glm)
 
 add_library(${PROJECT_NAME}
         # Platform
-        src/platform/Window.cpp
-        src/platform/Time.cpp
+        src/platform/window.cpp
+        src/platform/time.cpp
 
         # Input-Output
-        src/input/InputManager.cpp
+        src/input/input_manager.cpp
 
         # Scene
-        src/scene/Scene.cpp
-        src/scene/Entity.cpp
-        src/scene/components/Transform.cpp
-        src/scene/components/MeshRenderer.cpp
-        src/scene/components/Camera.cpp
+        src/scene/scene.cpp
+        src/scene/entity.cpp
+        src/scene/components/transform.cpp
+        src/scene/components/mesh_renderer.cpp
+        src/scene/components/camera.cpp
 
         # Graphics (API-agnostic)
-        src/graphics/Renderer.cpp
-        src/graphics/Mesh.cpp
+        src/graphics/renderer.cpp
+        src/graphics/mesh.cpp
         src/graphics/stb_image_impl.cpp
 
         # Vulkan
-        src/graphics/vulkan/VulkanRenderer.cpp
-        src/graphics/vulkan/VulkanInstance.cpp
-        src/graphics/vulkan/VulkanSurface.cpp
-        src/graphics/vulkan/VulkanPhysicalDevice.cpp
-        src/graphics/vulkan/VulkanDevice.cpp
-        src/graphics/vulkan/VulkanSwapchain.cpp
-        src/graphics/vulkan/VulkanMesh.cpp
+        src/graphics/vulkan/vulkan_renderer.cpp
+        src/graphics/vulkan/vulkan_instance.cpp
+        src/graphics/vulkan/vulkan_surface.cpp
+        src/graphics/vulkan/vulkan_physical_device.cpp
+        src/graphics/vulkan/vulkan_device.cpp
+        src/graphics/vulkan/vulkan_swapchain.cpp
+        src/graphics/vulkan/vulkan_mesh.cpp
 
         # Debugging/Profiling
-        src/debug/Debug.cpp
+        src/debug/debug.cpp
 )
 
 target_include_directories(${PROJECT_NAME}

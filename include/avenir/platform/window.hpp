@@ -5,8 +5,8 @@
 
 #include <string>
 
-#include "avenir/graphics/Renderer.hpp"
-#include "avenir/input/InputManager.hpp"
+#include "avenir/graphics/renderer.hpp"
+#include "avenir/input/input_manager.hpp"
 
 namespace avenir {
 // Forward declarations

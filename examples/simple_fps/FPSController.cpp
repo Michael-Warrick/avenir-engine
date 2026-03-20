@@ -3,7 +3,7 @@
 #include "FPSController.hpp"
 
 #include <glm/gtc/quaternion.hpp>
-#include <avenir/debug/Debug.hpp>
+#include <avenir/debug/debug.hpp>
 
 FPSController::FPSController(avenir::Entity &player, avenir::Scene &scene,
                              avenir::InputManager &inputManager)
@@ -11,16 +11,16 @@ FPSController::FPSController(avenir::Entity &player, avenir::Scene &scene,
     const std::optional<avenir::Entity *> playerCamera =
         findChildEntityWithCameraComponent();
     if (!playerCamera.has_value()) {
-        avenir::Debug::log(
+        avenir::debug::log(
             "Failed to locate child entity with camera component!",
-            avenir::Debug::MessageSeverity::eError);
+            avenir::debug::MessageSeverity::eError);
         return;
     }
 
     if (!isCameraMarkedPrimary(
             playerCamera.value()->component<avenir::Camera>())) {
-        avenir::Debug::log("Found camera but is not marked as primary!",
-                           avenir::Debug::MessageSeverity::eWarning);
+        avenir::debug::log("Found camera but is not marked as primary!",
+                           avenir::debug::MessageSeverity::eWarning);
         return;
     }
 

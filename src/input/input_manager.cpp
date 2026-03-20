@@ -1,4 +1,4 @@
-#include "avenir/input/InputManager.hpp"
+#include "avenir/input/input_manager.hpp"
 
 #include "GLFW/glfw3.h"
 

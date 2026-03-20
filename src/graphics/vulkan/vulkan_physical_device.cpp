@@ -1,6 +1,6 @@
-#include "avenir/graphics/vulkan/VulkanPhysicalDevice.hpp"
+#include "avenir/graphics/vulkan/vulkan_physical_device.hpp"
 
-#include "avenir/debug/Debug.hpp"
+#include "avenir/debug/debug.hpp"
 
 namespace avenir::graphics::vulkan {
 
@@ -81,8 +81,8 @@ void VulkanPhysicalDevice::pickPhysicalDevice() {
             "[Vulkan] Error: Failed to find a suitable GPU!\n");
     }
 
-    Debug::log("[Vulkan] Created: PhysicalDevice",
-               Debug::MessageSeverity::eInformation);
+    debug::log("[Vulkan] Created: PhysicalDevice",
+               debug::MessageSeverity::eInformation);
 }
 
 }  // namespace avenir::graphics::vulkan

@@ -1,4 +1,4 @@
-#include "avenir/graphics/Mesh.hpp"
+#include "avenir/graphics/mesh.hpp"
 
 namespace avenir::graphics {
 std::vector<Vertex> Mesh::vertices() const { return m_vertices; }

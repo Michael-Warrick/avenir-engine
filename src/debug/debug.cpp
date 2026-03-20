@@ -1,10 +1,10 @@
-#include "avenir/debug/Debug.hpp"
+#include "avenir/debug/debug.hpp"
 
 #include <iostream>
 
-namespace avenir {
+namespace avenir::debug {
 
-void Debug::log(const std::string &message, const MessageSeverity severity) {
+void log(const std::string &message, const MessageSeverity severity) {
 #ifndef NDEBUG
     if (severity == MessageSeverity::eInformation) {
         std::cout << "\e[1;34m[INFO]\e[0m \e[0;34m" << message << "\e[0m\n";
@@ -13,8 +13,8 @@ void Debug::log(const std::string &message, const MessageSeverity severity) {
     } else if (severity == MessageSeverity::eError) {
         std::cout << "\e[1;31m[ERROR]\e[0m \e[0;31m" << message << "\e[0m\n";
     }
-}
 #endif  // NDEBUG
+}
 
 // Do nothing in release builds?
-}  // namespace avenir
+}  // namespace avenir::debug

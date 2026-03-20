@@ -6,7 +6,7 @@
 #include <sstream>
 #include <iostream>
 
-#include "avenir/scene/Component.hpp"
+#include "avenir/scene/component.hpp"
 
 namespace avenir::scene {
 

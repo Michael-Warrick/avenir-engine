@@ -1,7 +1,7 @@
-#include "avenir/scene/Entity.hpp"
+#include "avenir/scene/entity.hpp"
 
-#include "avenir/scene/components/Camera.hpp"
-#include "avenir/scene/components/Transform.hpp"
+#include "avenir/scene/components/camera.hpp"
+#include "avenir/scene/components/transform.hpp"
 
 #include <iostream>
 #include <algorithm>

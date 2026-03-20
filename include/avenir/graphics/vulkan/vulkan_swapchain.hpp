@@ -29,7 +29,7 @@ private:
     void recreateSwapchain();
     void cleanupSwapchain();
 
-    vk::Extent2D chooseSwapExtent(
+    [[nodiscard]] vk::Extent2D chooseSwapExtent(
         const vk::SurfaceCapabilitiesKHR &capabilities) const;
 
     static vk::SurfaceFormatKHR chooseSwapSurfaceFormat(

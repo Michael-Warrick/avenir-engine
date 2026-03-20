@@ -18,12 +18,12 @@
 
 #include "avenir/graphics/stb_image.h"
 
-#include "avenir/graphics/Renderer.hpp"
-#include "avenir/graphics/vulkan/VulkanInstance.hpp"
-#include "avenir/graphics/vulkan/VulkanSurface.hpp"
-#include "avenir/graphics/vulkan/VulkanPhysicalDevice.hpp"
-#include "avenir/graphics/vulkan/VulkanDevice.hpp"
-#include "avenir/graphics/vulkan/VulkanSwapchain.hpp"
+#include "avenir/graphics/renderer.hpp"
+#include "avenir/graphics/vulkan/vulkan_instance.hpp"
+#include "avenir/graphics/vulkan/vulkan_surface.hpp"
+#include "avenir/graphics/vulkan/vulkan_physical_device.hpp"
+#include "avenir/graphics/vulkan/vulkan_device.hpp"
+#include "avenir/graphics/vulkan/vulkan_swapchain.hpp"
 
 namespace avenir::graphics::vulkan {
 class VulkanRenderer final : public Renderer {
@@ -83,8 +83,8 @@ private:
                                vk::ImageLayout oldLayout,
                                vk::ImageLayout newLayout) const;
 
-    uint32_t findMemoryType(uint32_t typeFilter,
-                            vk::MemoryPropertyFlags properties) const;
+    [[nodiscard]] uint32_t findMemoryType(
+        uint32_t typeFilter, vk::MemoryPropertyFlags properties) const;
 
     void createBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage,
                       vk::MemoryPropertyFlags properties,

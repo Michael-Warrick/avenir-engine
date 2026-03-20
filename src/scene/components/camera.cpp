@@ -1,4 +1,4 @@
-#include "avenir/scene/components/Camera.hpp"
+#include "avenir/scene/components/camera.hpp"
 
 #include "glm/gtc/matrix_transform.hpp"
 

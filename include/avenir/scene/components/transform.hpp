@@ -11,7 +11,7 @@
 #include <glm/mat4x4.hpp>
 #include <glm/gtc/quaternion.hpp>
 
-#include "avenir/scene/Component.hpp"
+#include "avenir/scene/component.hpp"
 
 namespace avenir::scene::components {
 

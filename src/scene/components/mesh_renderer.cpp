@@ -1,4 +1,4 @@
-#include "avenir/scene/components/MeshRenderer.hpp"
+#include "avenir/scene/components/mesh_renderer.hpp"
 
 namespace avenir::scene::components {
 

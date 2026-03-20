@@ -1,6 +1,6 @@
-#include "avenir/graphics/vulkan/VulkanDevice.hpp"
+#include "avenir/graphics/vulkan/vulkan_device.hpp"
 
-#include "avenir/debug/Debug.hpp"
+#include "avenir/debug/debug.hpp"
 
 namespace avenir::graphics::vulkan {
 
@@ -82,10 +82,10 @@ void VulkanDevice::createDevice() {
     m_device = vk::raii::Device(m_physicalDevice, logicalDeviceCreateInfo);
     m_queue = vk::raii::Queue(m_device, m_queueIndex, 0);
 
-    Debug::log("[Vulkan] Created: Device",
-               Debug::MessageSeverity::eInformation);
-    Debug::log("[Vulkan] Created: Queue (Graphics and Presentation)",
-               Debug::MessageSeverity::eInformation);
+    debug::log("[Vulkan] Created: Device",
+               debug::MessageSeverity::eInformation);
+    debug::log("[Vulkan] Created: Queue (Graphics and Presentation)",
+               debug::MessageSeverity::eInformation);
 }
 
 }  // namespace avenir::graphics::vulkan

@@ -3,7 +3,7 @@
 
 #include <string>
 
-#include "avenir/scene/Component.hpp"
+#include "avenir/scene/component.hpp"
 
 namespace avenir::scene::components {
 

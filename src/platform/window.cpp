@@ -1,4 +1,4 @@
-#include "avenir/platform/Window.hpp"
+#include "avenir/platform/window.hpp"
 
 namespace avenir::platform {
 
