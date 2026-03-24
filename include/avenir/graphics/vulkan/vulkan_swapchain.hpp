@@ -22,10 +22,13 @@ public:
     [[nodiscard]] const vk::Extent2D &extent() const;
     [[nodiscard]] const std::vector<vk::Image> &images() const;
     [[nodiscard]] const vk::SurfaceFormatKHR &surfaceFormat() const;
+    [[nodiscard]] const vk::raii::Image &depthImage() const;
+    [[nodiscard]] const vk::raii::ImageView &depthImageView() const;
 
 private:
     void createSwapchain();
     void createImageViews();
+    void createDepthResources();
     void recreateSwapchain();
     void cleanupSwapchain();
 
@@ -41,6 +44,24 @@ private:
     static vk::PresentModeKHR chooseSwapPresentMode(
         const std::vector<vk::PresentModeKHR> &availablePresentModes);
 
+    void createImage(uint32_t width, uint32_t height, vk::Format format,
+                     vk::ImageTiling tiling, vk::ImageUsageFlags usage,
+                     vk::MemoryPropertyFlags properties, vk::raii::Image &image,
+                     vk::raii::DeviceMemory &imageMemory) const;
+
+    uint32_t findMemoryType(const uint32_t typeFilter,
+                            const vk::MemoryPropertyFlags properties) const;
+
+    vk::Format findDepthFormat();
+
+    vk::Format findSupportedFormat(const std::vector<vk::Format> &candidates,
+                                   vk::ImageTiling tiling,
+                                   vk::FormatFeatureFlags features);
+
+    vk::raii::ImageView createImageView(const vk::raii::Image &image,
+                                        vk::Format format,
+                                        vk::ImageAspectFlags aspectFlags) const;
+
     GLFWwindow *m_glfwWindow = nullptr;
     const vk::raii::SurfaceKHR &m_surface;
     const vk::raii::PhysicalDevice &m_physicalDevice;
@@ -51,6 +72,9 @@ private:
     vk::SurfaceFormatKHR m_swapchainSurfaceFormat;
     vk::Extent2D m_swapchainExtent;
     std::vector<vk::raii::ImageView> m_swapchainImageViews;
+    vk::raii::Image m_depthImage = nullptr;
+    vk::raii::DeviceMemory m_depthImageMemory = nullptr;
+    vk::raii::ImageView m_depthImageView = nullptr;
 };
 
 }  // namespace avenir::graphics::vulkan

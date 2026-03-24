@@ -3,16 +3,20 @@
 #include "avenir/graphics/vulkan/vulkan_renderer.hpp"
 #include "avenir/platform/window.hpp"
 
+#include <iostream>
+
 namespace avenir::graphics {
 
 std::unique_ptr<Renderer> Renderer::create(platform::Window &window,
                                            const Api api) {
     switch (api) {
         case Api::eVulkan: {
-            auto renderer = std::make_unique<vulkan::VulkanRenderer>(window.handle());
+            auto renderer =
+                std::make_unique<vulkan::VulkanRenderer>(window.handle());
             // Attach renderer instance to GLFW window
             window.context().renderer = renderer.get();
-            glfwSetFramebufferSizeCallback(window.handle(), framebufferResizeCallback);
+            glfwSetFramebufferSizeCallback(window.handle(),
+                                           framebufferResizeCallback);
 
             return renderer;
         }
@@ -26,7 +30,8 @@ std::unique_ptr<Renderer> Renderer::create(platform::Window &window,
 
 void Renderer::framebufferResizeCallback(GLFWwindow *window, const int width,
                                          const int height) {
-    auto *windowContext = static_cast<platform::Window::Context *>(glfwGetWindowUserPointer(window));
+    const auto *windowContext = static_cast<platform::Window::Context *>(
+        glfwGetWindowUserPointer(window));
     if (!windowContext || !windowContext->renderer) {
         return;
     }

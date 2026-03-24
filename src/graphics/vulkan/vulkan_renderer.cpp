@@ -22,7 +22,6 @@ VulkanRenderer::VulkanRenderer(GLFWwindow *window)
     createDescriptorSetLayout();
     createGraphicsPipeline();
     createCommandPool();
-    createDepthResources();
     createTextureImage();
     createTextureImageView();
     createTextureSampler();
@@ -126,6 +125,7 @@ void VulkanRenderer::drawFrame(const glm::mat4 &cameraViewMatrix,
 }
 
 void VulkanRenderer::onFramebufferResize(int width, int height) {
+    m_swapchain.recreate();
     m_framebufferResized = true;
 }
 
@@ -154,7 +154,8 @@ void VulkanRenderer::recordCommandBuffer(const uint32_t imageIndex) const {
                           vk::PipelineStageFlagBits2::eColorAttachmentOutput,
                           vk::ImageAspectFlagBits::eColor);
 
-    transitionImageLayout(*m_depthImage, vk::ImageLayout::eUndefined,
+    transitionImageLayout(*m_swapchain.depthImage(),
+                          vk::ImageLayout::eUndefined,
                           vk::ImageLayout::eDepthAttachmentOptimal,
                           vk::AccessFlagBits2::eDepthStencilAttachmentWrite,
                           vk::AccessFlagBits2::eDepthStencilAttachmentWrite,
@@ -177,7 +178,7 @@ void VulkanRenderer::recordCommandBuffer(const uint32_t imageIndex) const {
     constexpr vk::ClearValue clearDepth = vk::ClearDepthStencilValue(1.0f, 0);
     const vk::RenderingAttachmentInfo depthAttachmentInfo =
         vk::RenderingAttachmentInfo()
-            .setImageView(m_depthImageView)
+            .setImageView(m_swapchain.depthImageView())
             .setImageLayout(vk::ImageLayout::eDepthAttachmentOptimal)
             .setLoadOp(vk::AttachmentLoadOp::eClear)
             .setStoreOp(vk::AttachmentStoreOp::eDontCare)
@@ -383,12 +384,13 @@ void VulkanRenderer::updateUniformBuffer(
     ubo.model = glm::mat4(1.0f);
     // ubo.model = glm::rotate(ubo.model, glm::radians(90.0f), glm::vec3(0, 1,
     // 0));
+    ubo.model = glm::translate(ubo.model, glm::vec3(0.0f, 0.5f, 0.0f));
 
     ubo.view = viewMatrix;
 
     ubo.projection =
-        // projectionMatrix *
-        glm::perspective(glm::radians(45.0f),
+        // projectionMatrix +
+        glm::perspective(45.0f,
                          static_cast<float>(m_swapchain.extent().width) /
                              static_cast<float>(m_swapchain.extent().height),
                          0.1f, 100.0f);
@@ -415,7 +417,8 @@ std::vector<char> VulkanRenderer::readFile(const std::string &fileName) {
 }
 
 void VulkanRenderer::createImage(const uint32_t width, const uint32_t height,
-                                 vk::Format format, vk::ImageTiling tiling,
+                                 const vk::Format format,
+                                 vk::ImageTiling tiling,
                                  const vk::ImageUsageFlags usage,
                                  const vk::MemoryPropertyFlags properties,
                                  vk::raii::Image &image,
@@ -685,17 +688,6 @@ void VulkanRenderer::createCommandPool() {
 
     debug::log("[Vulkan] Created: Command Pool",
                debug::MessageSeverity::eInformation);
-}
-
-void VulkanRenderer::createDepthResources() {
-    const vk::Format depthFormat = findDepthFormat();
-    createImage(m_swapchain.extent().width, m_swapchain.extent().height,
-                depthFormat, vk::ImageTiling::eOptimal,
-                vk::ImageUsageFlagBits::eDepthStencilAttachment,
-                vk::MemoryPropertyFlagBits::eDeviceLocal, m_depthImage,
-                m_depthImageMemory);
-    m_depthImageView = createImageView(m_depthImage, depthFormat,
-                                       vk::ImageAspectFlagBits::eDepth);
 }
 
 void VulkanRenderer::createTextureImage() {

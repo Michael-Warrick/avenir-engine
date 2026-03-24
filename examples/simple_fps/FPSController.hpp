@@ -20,8 +20,6 @@ private:
     void handleKeyboardInput(float deltaTime);
     void handleMousePosition();
 
-    void jump();
-
     // Camera entity cannot be a reference as it would need to be initialized in
     // the initializer list of FPSController's ctor.
     avenir::Entity *m_camera;

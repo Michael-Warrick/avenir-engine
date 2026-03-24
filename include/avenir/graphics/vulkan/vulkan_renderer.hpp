@@ -160,9 +160,9 @@ private:
     vk::raii::ImageView m_textureImageView = nullptr;
     vk::raii::Sampler m_textureSampler = nullptr;
 
-    vk::raii::Image m_depthImage = nullptr;
-    vk::raii::DeviceMemory m_depthImageMemory = nullptr;
-    vk::raii::ImageView m_depthImageView = nullptr;
+    // vk::raii::Image m_depthImage = nullptr;
+    // vk::raii::DeviceMemory m_depthImageMemory = nullptr;
+    // vk::raii::ImageView m_depthImageView = nullptr;
 
     vk::raii::Buffer m_vertexBuffer = nullptr;
     vk::raii::DeviceMemory m_vertexBufferMemory = nullptr;
