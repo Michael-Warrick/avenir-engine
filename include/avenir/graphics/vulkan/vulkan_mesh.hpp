@@ -8,12 +8,12 @@
 namespace avenir::graphics::vulkan {
 
 struct VulkanVertex final : public Vertex {
-    static vk::VertexInputBindingDescription getBindingDescription() {
+    static vk::VertexInputBindingDescription bindingDescription() {
         return {0, sizeof(VulkanVertex), vk::VertexInputRate::eVertex};
     }
 
     static std::array<vk::VertexInputAttributeDescription, 3>
-    getAttributeDescriptions() {
+    attributeDescriptions() {
         return {vk::VertexInputAttributeDescription(
                     0, 0, vk::Format::eR32G32B32Sfloat,
                     offsetof(VulkanVertex, position)),

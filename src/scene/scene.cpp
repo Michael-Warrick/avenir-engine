@@ -52,7 +52,7 @@ void Scene::setEntityParentToNone(const uint32_t childId) {
 glm::mat4 Scene::entityWorldMatrix(const uint32_t id) {
     const std::optional<Entity *> entity = findEntityById(id);
     const auto &entityTransform =
-        entity.value()->component<avenir::scene::components::Transform>();
+        entity.value()->component<components::Transform>();
 
     const glm::mat4 localMatrix = entityTransform.localMatrix();
     if (!entity.value()->parent().has_value()) {

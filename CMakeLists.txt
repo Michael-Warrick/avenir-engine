@@ -13,7 +13,7 @@ add_library(${PROJECT_NAME}
         src/platform/window.cpp
         src/platform/time.cpp
 
-        # Input-Output
+        # Input
         src/input/input_manager.cpp
 
         # Scene
@@ -23,12 +23,12 @@ add_library(${PROJECT_NAME}
         src/scene/components/mesh_renderer.cpp
         src/scene/components/camera.cpp
 
-        # Graphics (API-agnostic)
+        # Graphics - Common
         src/graphics/renderer.cpp
         src/graphics/mesh.cpp
         src/graphics/stb_image_impl.cpp
 
-        # Vulkan
+        # Graphics - Vulkan
         src/graphics/vulkan/vulkan_renderer.cpp
         src/graphics/vulkan/vulkan_instance.cpp
         src/graphics/vulkan/vulkan_surface.cpp
@@ -37,7 +37,7 @@ add_library(${PROJECT_NAME}
         src/graphics/vulkan/vulkan_swapchain.cpp
         src/graphics/vulkan/vulkan_mesh.cpp
 
-        # Debugging/Profiling
+        # Debugging
         src/debug/debug.cpp
 )
 

@@ -17,24 +17,29 @@ private:
 
     static bool isCameraMarkedPrimary(const avenir::Camera &camera);
 
-    void handleKeyboardInput(float deltaTime) const;
+    void handleKeyboardInput(float deltaTime);
     void handleMousePosition();
 
-    avenir::Entity &m_player;
+    void jump();
 
-    // Cannot be a reference as it would otherwise need to be specified during
-    // construction of the FPSController class.
+    // Camera entity cannot be a reference as it would need to be initialized in
+    // the initializer list of FPSController's ctor.
     avenir::Entity *m_camera;
 
+    avenir::Entity &m_player;
     avenir::Scene &m_scene;
-
     avenir::InputManager &m_inputManager;
 
-    float m_movementSpeed = 2.5f;
-    float m_mouseSensitivity = 0.1f;
     float m_yaw = 0.0f;
     float m_pitch = 0.0f;
     bool m_shouldConstrainLookPitch = true;
+    float m_mouseSensitivity = 0.1f;
+
+    float m_movementSpeed = 2.5f;
+    glm::vec3 m_velocity = glm::vec3(0.0f);
+    float m_jumpPower = 3.0f;
+    float m_cameraHeight = 0.8f;
+    static constexpr float m_gravity = 9.80665f;  // m/s^2
 };
 
 #endif  // SIMPLEFPS_FPSCONTROLLER_HPP

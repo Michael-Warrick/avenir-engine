@@ -8,29 +8,37 @@
 FPSController::FPSController(avenir::Entity &player, avenir::Scene &scene,
                              avenir::InputManager &inputManager)
     : m_player(player), m_scene(scene), m_inputManager(inputManager) {
-    const std::optional<avenir::Entity *> playerCamera =
+    const std::optional<avenir::Entity *> camera =
         findChildEntityWithCameraComponent();
-    if (!playerCamera.has_value()) {
+    if (!camera.has_value()) {
         avenir::debug::log(
             "Failed to locate child entity with camera component!",
             avenir::debug::MessageSeverity::eError);
         return;
     }
 
-    if (!isCameraMarkedPrimary(
-            playerCamera.value()->component<avenir::Camera>())) {
+    if (!isCameraMarkedPrimary(camera.value()->component<avenir::Camera>())) {
         avenir::debug::log("Found camera but is not marked as primary!",
                            avenir::debug::MessageSeverity::eWarning);
         return;
     }
 
-    m_camera = playerCamera.value();
+    m_camera = camera.value();
     m_inputManager.setCursorMode(avenir::CursorMode::eDisabled);
 }
 
 void FPSController::update(const float deltaTime) {
     handleKeyboardInput(deltaTime);
     handleMousePosition();
+
+    m_velocity.y -= m_gravity * deltaTime;
+    m_player.component<avenir::Transform>().position.y +=
+        m_velocity.y * deltaTime;
+
+    if (m_player.component<avenir::Transform>().position.y < 0) {
+        m_velocity.y = 0;
+        m_player.component<avenir::Transform>().position.y = 0;
+    }
 }
 
 std::optional<avenir::Entity *>
@@ -54,41 +62,38 @@ bool FPSController::isCameraMarkedPrimary(const avenir::Camera &camera) {
     return true;
 }
 
-void FPSController::handleKeyboardInput(const float deltaTime) const {
+void FPSController::handleKeyboardInput(const float deltaTime) {
     auto &playerTransform = m_player.component<avenir::Transform>();
+    const glm::vec3 forward = playerTransform.forward();
+    const glm::vec3 right = playerTransform.right();
 
-    const float velocity = m_movementSpeed * deltaTime;
-
-    glm::vec3 forward = playerTransform.forward();
-    forward.y = 0.0f;
-    if (glm::length(forward) > 0.0f) {
-        forward = glm::normalize(forward);
-    }
-
-    glm::vec3 right = playerTransform.right();
-    right.y = 0.0f;
-    if (glm::length(right) > 0.0f) {
-        right = glm::normalize(right);
-    }
+    m_velocity.x = m_movementSpeed * deltaTime;
+    m_velocity.z = m_movementSpeed * deltaTime;
 
     if (m_inputManager.key(avenir::Key::Code::eW) ==
         avenir::Key::State::ePress) {
-        playerTransform.position += forward * velocity;
+        playerTransform.position += forward * m_velocity.z;
     }
 
     if (m_inputManager.key(avenir::Key::Code::eS) ==
         avenir::Key::State::ePress) {
-        playerTransform.position -= forward * velocity;
+        playerTransform.position -= forward * m_velocity.z;
     }
 
     if (m_inputManager.key(avenir::Key::Code::eA) ==
         avenir::Key::State::ePress) {
-        playerTransform.position -= right * velocity;
+        playerTransform.position -= right * m_velocity.x;
     }
 
     if (m_inputManager.key(avenir::Key::Code::eD) ==
         avenir::Key::State::ePress) {
-        playerTransform.position += right * velocity;
+        playerTransform.position += right * m_velocity.x;
+    }
+
+    if (m_inputManager.key(avenir::Key::Code::eSpace) ==
+            avenir::Key::State::ePress &&
+        playerTransform.position.y == 0.0f) {
+        m_velocity.y += m_jumpPower;
     }
 }
 

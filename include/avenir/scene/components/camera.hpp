@@ -2,13 +2,14 @@
 #define AVENIR_SCENE_COMPONENTS_CAMERA_HPP
 
 #include "avenir/scene/component.hpp"
+#include <glm/matrix.hpp>
 
 namespace avenir::scene::components {
 
 struct Camera final : public Component {
     [[nodiscard]] std::unique_ptr<Component> clone() const override;
     [[nodiscard]] std::string name() const override;
-
+    [[nodiscard]] glm::mat4 projectionMatrix() const;
     float fov = 45.0f;
     float nearPlane = 0.1f;
     float farPlane = 100.0f;

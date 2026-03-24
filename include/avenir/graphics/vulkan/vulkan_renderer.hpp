@@ -31,7 +31,8 @@ public:
     explicit VulkanRenderer(GLFWwindow *window);
     ~VulkanRenderer() override;
 
-    void drawFrame(glm::mat4 cameraViewMatrix) override;
+    void drawFrame(const glm::mat4 &cameraViewMatrix,
+                   const glm::mat4 &cameraProjectionMatrix) override;
     void onFramebufferResize(int width, int height) override;
 
 private:
@@ -99,8 +100,8 @@ private:
                            const vk::raii::Image &image, uint32_t width,
                            uint32_t height) const;
 
-    void updateUniformBuffer(uint32_t currentImage,
-                             const glm::mat4 &viewMatrix) const;
+    void updateUniformBuffer(uint32_t currentImage, const glm::mat4 &viewMatrix,
+                             const glm::mat4 &projectionMatrix) const;
 
     static std::vector<char> readFile(const std::string &fileName);
 
@@ -209,7 +210,31 @@ private:
         {{0.5f, -0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
         {{-0.5f, -0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
         {{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 0.0f}},
-        {{0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f}}};
+        {{0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
+
+        // Left face
+        {{-0.5f, -0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
+        {{-0.5f, -0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
+        {{-0.5f, 0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 0.0f}},
+        {{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
+
+        // Right face
+        {{0.5f, -0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
+        {{0.5f, -0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
+        {{0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 0.0f}},
+        {{0.5f, 0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
+
+        // Top face
+        {{-0.5f, 0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
+        {{0.5f, 0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
+        {{0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 0.0f}},
+        {{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
+
+        // Bottom face
+        {{-0.5f, -0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
+        {{0.5f, -0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
+        {{0.5f, -0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 0.0f}},
+        {{-0.5f, -0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f}}};
 
     const std::vector<uint16_t> m_indices = {// Front
                                              0, 1, 2, 2, 3, 0,
@@ -218,15 +243,15 @@ private:
                                              4, 5, 6, 6, 7, 4,
 
                                              // Left
-                                             5, 0, 3, 3, 6, 5,
+                                             8, 9, 10, 10, 11, 8,
 
                                              // Right
-                                             1, 4, 7, 7, 2, 1,
+                                             12, 13, 14, 14, 15, 12,
 
                                              // Top
-                                             3, 2, 7, 7, 6, 3,
+                                             16, 17, 18, 18, 19, 16,
                                              // Bottom
-                                             5, 4, 1, 1, 0, 5};
+                                             20, 21, 22, 22, 23, 20};
 };
 }  // namespace avenir::graphics::vulkan
 #endif  // VULKANRENDERER_HPP

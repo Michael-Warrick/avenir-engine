@@ -47,7 +47,8 @@ VulkanRenderer::~VulkanRenderer() {
                debug::MessageSeverity::eInformation);
 }
 
-void VulkanRenderer::drawFrame(const glm::mat4 cameraViewMatrix) {
+void VulkanRenderer::drawFrame(const glm::mat4 &cameraViewMatrix,
+                               const glm::mat4 &cameraProjectionMatrix) {
     while (vk::Result::eTimeout ==
            m_device.handle().waitForFences(*m_inFlightFences[m_currentFrame],
                                            vk::True, UINT64_MAX)) {
@@ -68,7 +69,8 @@ void VulkanRenderer::drawFrame(const glm::mat4 cameraViewMatrix) {
             "[Vulkan] Error: Failed to acquire swapchain image!\n");
     }
 
-    updateUniformBuffer(m_currentFrame, cameraViewMatrix);
+    updateUniformBuffer(m_currentFrame, cameraViewMatrix,
+                        cameraProjectionMatrix);
 
     m_device.handle().resetFences(*m_inFlightFences[m_currentFrame]);
 
@@ -374,8 +376,9 @@ void VulkanRenderer::copyBufferToImage(const vk::raii::Buffer &buffer,
     endSingleTimeCommands(commandBuffer);
 }
 
-void VulkanRenderer::updateUniformBuffer(const uint32_t currentImage,
-                                         const glm::mat4 &viewMatrix) const {
+void VulkanRenderer::updateUniformBuffer(
+    const uint32_t currentImage, const glm::mat4 &viewMatrix,
+    const glm::mat4 &projectionMatrix) const {
     UniformBufferObject ubo{};
     ubo.model = glm::mat4(1.0f);
     // ubo.model = glm::rotate(ubo.model, glm::radians(90.0f), glm::vec3(0, 1,
@@ -384,10 +387,11 @@ void VulkanRenderer::updateUniformBuffer(const uint32_t currentImage,
     ubo.view = viewMatrix;
 
     ubo.projection =
+        // projectionMatrix *
         glm::perspective(glm::radians(45.0f),
                          static_cast<float>(m_swapchain.extent().width) /
                              static_cast<float>(m_swapchain.extent().height),
-                         0.1f, 10.f);
+                         0.1f, 100.0f);
 
     // Flipping Y coordinate of clip coordinates to match Vulkan's
     ubo.projection[1][1] *= -1;

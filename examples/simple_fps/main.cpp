@@ -14,11 +14,11 @@ int main(int argc, char *argv[]) {
 
     avenir::Entity &player = scene.createEntity();
     player.component<avenir::Transform>().position =
-        glm::vec3(0.0f, 0.0f, 2.0f);
+        glm::vec3(0.0f, 0.0f, 3.0f);
 
     avenir::Entity &camera = scene.createEntity();
     camera.component<avenir::Transform>().position =
-        glm::vec3(0.0f, 0.8f, 0.0f);
+        glm::vec3(0.0f, 1.8f, 0.0f);
     camera.addComponent<avenir::Camera>();
 
     scene.setEntityParent(camera.id(), player.id());
@@ -30,7 +30,13 @@ int main(int argc, char *argv[]) {
 
         fpsController.update(time.deltaTime());
 
-        renderer->drawFrame(scene.entityInverseWorldMatrix(camera.id()));
+        const glm::mat4 &viewMatrix =
+            scene.entityInverseWorldMatrix(camera.id());
+
+        const glm::mat4 &projectionMatrix =
+            camera.component<avenir::Camera>().projectionMatrix();
+
+        renderer->drawFrame(viewMatrix, projectionMatrix);
     }
 
     return 0;
